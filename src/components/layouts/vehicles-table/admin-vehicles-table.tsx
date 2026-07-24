@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, MoreHorizontalIcon } from "lucide-react";
 import { SupabaseClient } from "@supabase/supabase-js";
 import Lightbox from "yet-another-react-lightbox";
 
@@ -11,8 +11,15 @@ import { Database } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import AdminDeleteVehicleDialog from "@/components/layouts/vehicles-table/admin-delete-vehicle-dialog";
 import AdminEditVehicleDialog from "@/components/layouts/vehicles-table/admin-edit-vehicle-dialog";
-
-import "yet-another-react-lightbox/styles.css";
+import AdminDetailsVehicleDialog from "@/components/layouts/vehicles-table/admin-details-vehicle-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 type Props = {
   supabaseClient: SupabaseClient<Database>;
@@ -25,11 +32,17 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
   const [loading, setLoading] = useState(true);
   const [deleteRow, setDeleteRow] = useState<VehicleRow | undefined>(undefined);
   const [updateRow, setUpdateRow] = useState<VehicleRow | undefined>(undefined);
+  const [detailsRow, setDetailsRow] = useState<VehicleRow | undefined>(undefined);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | undefined>(undefined);
 
   // Handlers
   function onRowAdd(row: VehicleRow) {
-    setVehicleRows(prev => [...prev, row]);
+    const { data } = supabaseClient
+      .storage
+      .from("vehicles")
+      .getPublicUrl(row.image);
+
+    setVehicleRows(prev => [...prev, { ...row, imageUrl: data.publicUrl }]);
   }
 
   function onRowDelete(row: VehicleRow) {
@@ -54,6 +67,8 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
 
   // Use effects
   useEffect(() => {
+    if (vehicleRows.length > 0) return;
+
     async function fetchVehicles() {
       setLoading(true);
 
@@ -98,6 +113,8 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
                               row={updateRow}
                               onRowUpdate={onRowUpdate}
                               onCancel={() => setUpdateRow(undefined)} />
+      <AdminDetailsVehicleDialog row={detailsRow}
+                                 onClose={() => setDetailsRow(undefined)} />
       <Lightbox open={!!imagePreviewUrl}
                 close={() => setImagePreviewUrl(undefined)}
                 slides={[
@@ -110,24 +127,30 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
                                onRowAdd={onRowAdd} />
       </div>
 
-      <Table>
-        <TableCaption>A list of your vehicles</TableCaption>
+      <Table className="max-h-[750px]">
+        <TableCaption>A list of your Vehicles</TableCaption>
         <TableHeader>
           <TableRow>
+            <TableHead>Vehicle ID</TableHead>
             <TableHead>Created At</TableHead>
             <TableHead>Model</TableHead>
             <TableHead>Color</TableHead>
-            <TableHead>Year Model</TableHead>
-            <TableHead>Daily Price</TableHead>
-            <TableHead>Half Day Price</TableHead>
-            <TableHead>Hourly Price</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Image</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="text-end">Actions</TableHead>
           </TableRow>
         </TableHeader>
 
         <TableBody>
+          {loading && [1, 2, 3, 4, 5].map(item => (
+            <TableRow key={`vehicles-table-skeleton-${item}`}>
+              <TableCell><Skeleton className="h-6 w-[200px]" /></TableCell>
+              <TableCell><Skeleton className="h-6 w-[200px]" /></TableCell>
+              <TableCell><Skeleton className="h-6 w-[200px]" /></TableCell>
+              <TableCell><Skeleton className="h-6 w-[200px]" /></TableCell>
+              <TableCell><Skeleton className="h-6 w-[200px]" /></TableCell>
+              <TableCell><Skeleton className="h-6 w-[200px]" /></TableCell>
+            </TableRow>
+          ))}
           {!loading && vehicleRows.map(item => {
             const formattedCreatedAt = new Date(item.created_at).toLocaleDateString("en-PH", {
               month: 'short',
@@ -137,44 +160,41 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
               minute: 'numeric',
               hour12: true
             });
-            const formattedDailyPrice = item.daily_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" });
-            const formattedHalfDayPrice = item.half_day_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" });
-            const formattedHourlyPrice = item.hourly_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" });
 
             return (
               <TableRow key={`vehicle-item-${item.id}`}>
+                <TableCell>{item.id}</TableCell>
                 <TableCell>{formattedCreatedAt}</TableCell>
                 <TableCell>{item.model}</TableCell>
                 <TableCell>{item.vehicle_colors.name}</TableCell>
-                <TableCell>{item.year_model}</TableCell>
-                <TableCell>{formattedDailyPrice}</TableCell>
-                <TableCell>{formattedHalfDayPrice}</TableCell>
-                <TableCell>{formattedHourlyPrice}</TableCell>
                 <TableCell>
                   {item.status === 1 ? (
-                    <p className="bg-green-500/25 border px-4 py-1 text-center rounded-xl">Available</p>
+                    <Badge variant="secondary">Available</Badge>
                   ) : (
-                    <p className="bg-neutral-500/25 border px-4 py-1 text-center rounded-xl">Under Maintenance</p>
+                    <Badge variant="destructive">Under Maintenance</Badge>
                   )}
                 </TableCell>
-                <TableCell>
-                  <Button variant="secondary" onClick={() => setImagePreviewUrl(item.imageUrl)}>View</Button>
-                </TableCell>
-                <TableCell className="space-x-1">
-                  <Button variant="destructive" onClick={() => setDeleteRow(item)}>Delete</Button>
-                  <Button variant="secondary" onClick={() => setUpdateRow(item)}>Edit</Button>
+                <TableCell className="text-end">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger render={<Button variant="ghost"><MoreHorizontalIcon/></Button>} />
+                    <DropdownMenuContent>
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel>Row Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => setDetailsRow(item)}>Details</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setUpdateRow(item)}>Edit</DropdownMenuItem>
+                      </DropdownMenuGroup>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuGroup>
+                        <DropdownMenuItem variant="destructive" onClick={() => setDeleteRow(item)}>Delete</DropdownMenuItem>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             );
           })}
         </TableBody>
       </Table>
-
-      {loading && (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="animate-spin" />
-        </div>
-      )}
     </div>
   );
 }

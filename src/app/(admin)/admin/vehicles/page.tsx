@@ -19,6 +19,7 @@ import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
 
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import "filepond/dist/filepond.min.css";
+import "yet-another-react-lightbox/styles.css";
 
 // Register filepond plugins
 registerPlugin(
