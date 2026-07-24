@@ -21,16 +21,21 @@ type Props = {
   onCancel: () => void;
 };
 
-type VehicleColorMenuItem = {
+type MenuItem = {
   value: number;
   label: string;
 };
 
 export default function AdminEditVehicleDialog({ supabaseClient, vehicleColors, row, onRowUpdate, onCancel }: Props) {
-  // States
-  const [vehicleColorMenuItems, setVehicleColorMenuItems] = useState<VehicleColorMenuItem[]>([]);
+  // Menu items
+  const [vehicleColorMenuItems, setVehicleColorMenuItems] = useState<MenuItem[]>([]);
+  const statusMenuItems: MenuItem[] = [
+    { value: 1, label: "Available" },
+    { value: 2, label: "Under Maintenance" },
+  ];
 
   // Form states
+  const [status, setStatus] = useState<number | null>(1);
   const [model, setModel] = useState<string | undefined>(undefined);
   const [color, setColor] = useState<number | null>(null);
   const [yearModel, setYearModel] = useState<number | undefined>(undefined);
@@ -86,6 +91,7 @@ export default function AdminEditVehicleDialog({ supabaseClient, vehicleColors, 
           daily_price: dailyPrice ?? 0.00,
           half_day_price: halfDayPrice ?? 0.00,
           hourly_price: hourlyPrice ?? 0.00,
+          status: status ?? 1,
           ...(newImageFileName && { image: newImageFileName })
         })
         .eq("id", row.id)
@@ -104,6 +110,7 @@ export default function AdminEditVehicleDialog({ supabaseClient, vehicleColors, 
 
   // Helpers
   function validateForm() {
+    if (status && status < 1) return "Status is required.";
     if (color && color < 0) return "Color is required.";
     if (dailyPrice && dailyPrice < 0) return "Daily price cannot be negative.";
     if (halfDayPrice && halfDayPrice < 0) return "Half day price cannot be negative.";
@@ -164,6 +171,26 @@ export default function AdminEditVehicleDialog({ supabaseClient, vehicleColors, 
           <form id="edit-vehicle-form" onSubmit={onFormSubmit}>
             <FieldSet>
               <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="color">Status <span className="text-red-400 font-bold">*</span></FieldLabel>
+                  <Select items={statusMenuItems} name="color" autoComplete="off" value={status} onValueChange={e => setStatus(e)} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a Color" />
+                    </SelectTrigger>
+
+                    <SelectContent alignItemWithTrigger>
+                      <SelectGroup>
+                        {statusMenuItems.map(item => (
+                          <SelectItem key={`add-vehicle-color-item-${item.value}`} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>Choose the status of the unit.</FieldDescription>
+                </Field>
+
                 <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
                   <Field>
                     <FieldLabel htmlFor="model">Model <span className="text-red-400 font-bold">*</span></FieldLabel>
@@ -181,7 +208,7 @@ export default function AdminEditVehicleDialog({ supabaseClient, vehicleColors, 
                       <SelectContent alignItemWithTrigger>
                         <SelectGroup>
                           {vehicleColorMenuItems.map(item => (
-                            <SelectItem key={`add-vehicle-color-item-${item.value}`} value={item.value}>
+                            <SelectItem key={`edit-vehicle-color-item-${item.value}`} value={item.value}>
                               {item.label}
                             </SelectItem>
                           ))}

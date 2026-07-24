@@ -121,6 +121,7 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
             <TableHead>Daily Price</TableHead>
             <TableHead>Half Day Price</TableHead>
             <TableHead>Hourly Price</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Image</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -149,6 +150,13 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
                 <TableCell>{formattedDailyPrice}</TableCell>
                 <TableCell>{formattedHalfDayPrice}</TableCell>
                 <TableCell>{formattedHourlyPrice}</TableCell>
+                <TableCell>
+                  {item.status === 1 ? (
+                    <p className="bg-green-500/25 border px-4 py-1 text-center rounded-xl">Available</p>
+                  ) : (
+                    <p className="bg-neutral-500/25 border px-4 py-1 text-center rounded-xl">Under Maintenance</p>
+                  )}
+                </TableCell>
                 <TableCell>
                   <Button variant="secondary" onClick={() => setImagePreviewUrl(item.imageUrl)}>View</Button>
                 </TableCell>

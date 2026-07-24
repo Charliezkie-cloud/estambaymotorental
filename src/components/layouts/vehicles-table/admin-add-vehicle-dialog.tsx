@@ -19,17 +19,24 @@ type Props = {
   onRowAdd: (e: VehicleRow) => void;
 };
 
-type VehicleColorMenuItem = {
+type MenuItem = {
   value: number;
   label: string;
 };
 
 export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, onRowAdd }: Props) {
+  // Menu items
+  const [vehicleColorMenuItems, setVehicleColorMenuItems] = useState<MenuItem[]>([]);
+  const statusMenuItems: MenuItem[] = [
+    { value: 1, label: "Available" },
+    { value: 2, label: "Under Maintenance" },
+  ];
+
   // States
-  const [vehicleColorMenuItems, setVehicleColorMenuItems] = useState<VehicleColorMenuItem[]>([]);
   const [open, setOpen] = useState(false);
 
   // Form states
+  const [status, setStatus] = useState<number | null>(1);
   const [model, setModel] = useState<string | undefined>(undefined);
   const [color, setColor] = useState<number | null>(null);
   const [yearModel, setYearModel] = useState<number | undefined>(undefined);
@@ -64,7 +71,8 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
           daily_price: dailyPrice ?? 0.00,
           half_day_price: halfDayPrice ?? 0.00,
           hourly_price: hourlyPrice ?? 0.00,
-          image: newImageFileName
+          image: newImageFileName,
+          status: status ?? 1
         })
         .select("*, vehicle_colors(name)")
         .single();
@@ -93,6 +101,7 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
 
   // Helpers
   function validateForm() {
+    if (status && status < 1) return "Status is required.";
     if (color && color < 0) return "Color is required.";
     if (dailyPrice && dailyPrice < 0) return "Daily price cannot be negative.";
     if (halfDayPrice && halfDayPrice < 0) return "Half day price cannot be negative.";
@@ -142,6 +151,26 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
           <form id="add-vehicle-form" onSubmit={onFormSubmit}>
             <FieldSet>
               <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="color">Status <span className="text-red-400 font-bold">*</span></FieldLabel>
+                  <Select items={statusMenuItems} name="color" autoComplete="off" value={status} onValueChange={e => setStatus(e)} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a Color" />
+                    </SelectTrigger>
+
+                    <SelectContent alignItemWithTrigger>
+                      <SelectGroup>
+                        {statusMenuItems.map(item => (
+                          <SelectItem key={`add-vehicle-color-item-${item.value}`} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>Choose the status of the unit.</FieldDescription>
+                </Field>
+
                 <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
                   <Field>
                     <FieldLabel htmlFor="model">Model <span className="text-red-400 font-bold">*</span></FieldLabel>
