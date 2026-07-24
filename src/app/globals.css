@@ -128,3 +128,12 @@
     @apply font-sans;
   }
 }
+
+.filepond--dark .filepond--panel-root {
+  background-color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.filepond--dark .filepond--drop-label {
+  color: hsl(var(--foreground));
+}

@@ -3,7 +3,7 @@ import { User } from "@supabase/supabase-js";
 
 import { supabaseClient } from "@/lib/supabase-client";
 
-export default function useAuth() {
+export function useAuth() {
   // States
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
@@ -14,13 +14,16 @@ export default function useAuth() {
     async function checkAuth() {
       setLoading(true);
 
-      const { data, error } = await supabaseClient.auth.getUser();
+      try {
+        const { data, error } = await supabaseClient.auth.getUser();
 
-      if (error) return setError(error.message);
-      if (!data) return setUser(null);
+        if (error) return setError(error.message);
+        if (!data) return setUser(null);
 
-      setUser(data.user);
-      return setLoading(false);
+        setUser(data.user);
+      } finally {
+        setLoading(false);
+      }
     }
 
     if (loading) checkAuth();
@@ -34,8 +37,6 @@ export default function useAuth() {
         if (event === "SIGNED_IN" && session) {
           setUser(session.user);
         } else if (event === "SIGNED_OUT") {
-          setUser(null);
-        } else {
           setUser(null);
         }
 
