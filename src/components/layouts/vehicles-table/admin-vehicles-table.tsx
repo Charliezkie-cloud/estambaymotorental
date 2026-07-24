@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, MoreHorizontalIcon } from "lucide-react";
+import { MoreHorizontalIcon } from "lucide-react";
 import { SupabaseClient } from "@supabase/supabase-js";
 import Lightbox from "yet-another-react-lightbox";
 
