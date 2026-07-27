@@ -52,11 +52,15 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
     setLoading(true);
 
     const validationMessage = validateForm();
-    if (typeof validationMessage === "string")
-      return toast.error("Invalid Form Input", { description: validationMessage });
+    if (typeof validationMessage === "string") {
+      toast.error("Invalid Form Input", { description: validationMessage });
+      return setLoading(false);
+    }
 
-    if (!modelImage)
-      return toast.error("Invalid Form Input", { description: "Image is required." });
+    if (!modelImage) {
+      toast.error("Invalid Form Input", { description: "Image is required." });
+      return setLoading(false);
+    }
 
     try {
       const imageFile = modelImage[0].file;
@@ -101,6 +105,7 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
 
   // Helpers
   function validateForm() {
+    if (model && model.trim().length < 1) return "Model is required.";
     if (status && status < 1) return "Status is required.";
     if (color && color < 0) return "Color is required.";
     if (dailyPrice && dailyPrice < 0) return "Daily price cannot be negative.";
@@ -248,7 +253,7 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
         <DialogFooter className="space-x-2">
           <DialogClose onClick={() => setOpen(false)}>Cancel</DialogClose>
           <Button type="submit" form="add-vehicle-form" disabled={loading}>
-            Save Changes{" "}{loading && (<Loader2 className="animate-spin" />)}
+            Save{" "}{loading && (<Loader2 className="animate-spin" />)}
           </Button>
         </DialogFooter>
       </DialogContent>

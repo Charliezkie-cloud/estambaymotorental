@@ -25,6 +25,11 @@ export default function AdminAddColorDialog({ supabaseClient, onRowAdd = () => {
     e.preventDefault();
     setLoading(true);
 
+    if (colorName.trim().length < 1) {
+      toast.error("Invalid Form Input", { description: "Color name is required." });
+      return setLoading(false);
+    }
+
     try {
       const { data, error } = await supabaseClient
         .from("vehicle_colors")

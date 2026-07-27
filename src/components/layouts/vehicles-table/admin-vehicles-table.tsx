@@ -166,7 +166,7 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
                 <TableCell>{item.id}</TableCell>
                 <TableCell>{formattedCreatedAt}</TableCell>
                 <TableCell>{item.model}</TableCell>
-                <TableCell>{item.vehicle_colors.name}</TableCell>
+                <TableCell>{item.vehicle_colors?.name}</TableCell>
                 <TableCell>
                   {item.status === 1 ? (
                     <Badge variant="secondary">Available</Badge>

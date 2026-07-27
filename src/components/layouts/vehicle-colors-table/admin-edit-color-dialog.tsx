@@ -24,10 +24,15 @@ export default function AdminEditColorDialog({ row, supabaseClient, onRowUpdate,
 
   // Handlers
   async function onFormSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
     if (!row) return;
+
+    e.preventDefault();
     setLoading(true);
+
+    if (colorName.trim().length < 1) {
+      toast.error("Invalid Form Input", { description: "Color name is required." });
+      return setLoading(false);
+    }
 
     try {
       const { data, error } = await supabaseClient

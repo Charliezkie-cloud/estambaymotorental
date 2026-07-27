@@ -47,13 +47,16 @@ export default function AdminEditVehicleDialog({ supabaseClient, vehicleColors, 
 
   // Handlers
   async function onFormSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
     if (!row) return;
+
+    e.preventDefault();
     setLoading(true);
 
     const validationMessage = validateForm();
-    if (typeof validationMessage === "string")
-      return toast.error("Invalid Form Input", { description: validationMessage });
+    if (typeof validationMessage === "string") {
+      toast.error("Invalid Form Input", { description: validationMessage });
+      return setLoading(false);
+    }
 
     try {
       let newImageFileName: string | null = null;
@@ -110,6 +113,7 @@ export default function AdminEditVehicleDialog({ supabaseClient, vehicleColors, 
 
   // Helpers
   function validateForm() {
+    if (model && model.trim().length < 1) return "Model is required.";
     if (status && status < 1) return "Status is required.";
     if (color && color < 0) return "Color is required.";
     if (dailyPrice && dailyPrice < 0) return "Daily price cannot be negative.";

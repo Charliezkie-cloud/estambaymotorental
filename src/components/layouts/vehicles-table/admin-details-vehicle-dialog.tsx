@@ -39,7 +39,7 @@ export default function AdminDetailsVehicleDialog({ row, onClose }: Props) {
             <DialogDescription>The details of {row?.model ?? "Vehicle."}</DialogDescription>
           </DialogHeader>
 
-          <div className="overflow-y-auto max-h-[75vh]">
+          <div className="overflow-y-auto max-h-[75vh] pe-2">
 
             <div className="space-y-7">
               <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
@@ -60,7 +60,7 @@ export default function AdminDetailsVehicleDialog({ row, onClose }: Props) {
                 <div className="space-y-1">
                   <h2 className="font-semibold">Color</h2>
                   <hr/>
-                  <div>{row ? <p>{row.vehicle_colors.name}</p> : <Skeleton className="w-full h-6" />}</div>
+                  <div>{(row && row.vehicle_colors) ? <p>{row.vehicle_colors.name}</p> : <Skeleton className="w-full h-6" />}</div>
                 </div>
 
                 <div className="space-y-1">

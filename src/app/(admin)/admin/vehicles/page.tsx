@@ -54,13 +54,13 @@ export default function AdminVehiclePage() {
         <AdminResponsiveSidebarTrigger />
 
         <section className="space-y-6 m-4 md:m-6">
-          <h1 className="font-heading text-xl md:text-2xl font-bold">Vehicles</h1>
+          <h2 className="font-heading text-xl md:text-2xl font-bold">Vehicles</h2>
           <AdminVehiclesTable supabaseClient={supabaseClient}
                               vehicleColors={vehicleColors} />
         </section>
 
         <section className="space-y-6 m-4 md:m-6">
-          <h1 className="font-heading text-xl md:text-2xl font-bold">Colors</h1>
+          <h2 className="font-heading text-xl md:text-2xl font-bold">Colors</h2>
           <AdminColorsTable supabaseClient={supabaseClient}
                             onVehicleColorsFetch={(e) => setVehicleColors(e)} />
         </section>
