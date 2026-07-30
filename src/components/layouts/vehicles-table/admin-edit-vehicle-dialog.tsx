@@ -2,7 +2,7 @@ import { Loader2 } from "lucide-react";
 import { FilePond } from "react-filepond";
 import React, { useEffect, useState } from "react";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { ActualFileObject, FilePondFile } from "filepond";
+import { FilePondFile } from "filepond";
 import { toast } from "sonner";
 
 import { Database } from "@/types/database.types";
