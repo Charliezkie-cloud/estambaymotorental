@@ -100,7 +100,7 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
     }
 
     fetchVehicles();
-  }, [supabaseClient]);
+  }, []);
 
   return (
     <div className="space-y-3 bg-card border border-border p-4 rounded-xl">

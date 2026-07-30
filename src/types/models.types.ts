@@ -1,10 +1,10 @@
 import { Database } from "@/types/database.types";
 
+// Tables
 export type VehicleRow = Database["public"]["Tables"]["vehicles"]["Row"] & {
   vehicle_colors?: { name: string; };
   imageUrl?: string;
 };
-
 export type VehicleColorRow = Database["public"]["Tables"]["vehicle_colors"]["Row"];
 export type BookingRow = Database["public"]["Tables"]["bookings"]["Row"] & {
   vehicles?: {
@@ -17,3 +17,7 @@ export type BookingRow = Database["public"]["Tables"]["bookings"]["Row"] & {
   drivers_license_image_url?: string;
   valid_id_image_url?: string;
 };
+
+// Views
+export type MonthlyBookingsCountsViewItem = Database["public"]["Views"]["monthly_bookings_counts"]["Row"];
+export type VehicleIncomesViewItem = Database["public"]["Views"]["vehicles_income"]["Row"];
