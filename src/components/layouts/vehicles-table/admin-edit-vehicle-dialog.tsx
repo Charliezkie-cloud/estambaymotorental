@@ -12,6 +12,8 @@ import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/com
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { deleteFromBucket, uploadToBucket, VEHICLES_BUCKET } from "@/lib/storage-helpers";
+import { SELECT_VEHICLES_QUERY } from "@/lib/table-helpers";
 
 type Props = {
   supabaseClient: SupabaseClient<Database>;
@@ -60,29 +62,10 @@ export default function AdminEditVehicleDialog({ supabaseClient, vehicleColors, 
 
     try {
       let newImageFileName: string | null = null;
-
       if (modelImage) {
-        const { error: storageDeletionError } = await supabaseClient
-          .storage
-          .from("vehicles")
-          .remove([row.image]);
-
-        if (storageDeletionError)
-          return toast.error("Failed to Delete Vehicle Image", { description: storageDeletionError.message });
-
         const imageFile = modelImage[0].file;
-        newImageFileName = generateFileName(imageFile);
-
-        const { error: storageError } = await supabaseClient
-          .storage
-          .from("vehicles")
-          .upload(newImageFileName, imageFile, {
-            cacheControl: "3600",
-            upsert: false
-          });
-
-        if (storageError)
-          return toast.error("Failed to Upload Vehicle Image", { description: storageError.message });
+        await deleteFromBucket(VEHICLES_BUCKET, [row.image]);
+        newImageFileName = await uploadToBucket(VEHICLES_BUCKET, imageFile);
       }
 
       const { data, error } = await supabaseClient
@@ -98,14 +81,17 @@ export default function AdminEditVehicleDialog({ supabaseClient, vehicleColors, 
           ...(newImageFileName && { image: newImageFileName })
         })
         .eq("id", row.id)
-        .select("*, vehicle_colors(name)")
+        .select(SELECT_VEHICLES_QUERY)
         .single();
 
-      if (error)
-        return toast.error("Failed to Update Vehicle Row", { description: error.message });
+      if (error) return toast.error("Failed to Update Vehicle Row", { description: error.message });
 
       toast.success("Vehicle Updated Successfully");
       onRowUpdate(data);
+    } catch (error) {
+      toast.error("Something went wrong while adding the vehicle", {
+        description: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setLoading(false);
     }

@@ -33,6 +33,16 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database.types";
 import { FilePondFile } from "filepond";
 import { toast } from "sonner";
+import {
+  deleteFromBucket,
+  DRIVERS_LICENSE_BUCKET,
+  IDS_BUCKET,
+  RECEIPTS_BUCKET,
+  uploadToBucket
+} from "@/lib/storage-helpers";
+import { getDaysBetween } from "@/lib/date-time-helpers";
+import { MenuItem, paymentStatusMenuItems, paymentMethodMenuItems, bookingStatusMenuItems } from "@/lib/menu-items-data";
+import { SELECT_BOOKING_QUERY } from "@/lib/table-helpers";
 
 type Props = {
   row?: BookingRow;
@@ -42,31 +52,9 @@ type Props = {
   onCancel: () => void;
 };
 
-type MenuItem = {
-  value: number | string;
-  label: string;
-};
-
 export default function AdminEditBookingDialog({ row, vehiclesRow, supabaseClient, onRowUpdate, onCancel }: Props) {
   // Menu items
   const [vehicleMenuItems, setVehicleMenuItems] = useState<MenuItem[]>([]);
-  const paymentMethodMenuItems: MenuItem[] = [
-    { value: "GCash", label: "GCash" },
-    { value: "GoTyme", label: "GoTyme" },
-    { value: "Bank Transfer", label: "Bank Transfer" },
-  ];
-  const bookingStatusMenuItems: MenuItem[] = [
-    { value: 1, label: "Completed" },
-    { value: 2, label: "Change Unit" },
-    { value: 3, label: "Reserved" },
-    { value: 4, label: "Rescheduled" },
-    { value: 5, label: "Cancelled" },
-  ];
-  const paymentStatusMenuItems: MenuItem[] = [
-    { value: 1, label: "Paid" },
-    { value: 2, label: "Partially Paid" },
-    { value: 3, label: "Pending" },
-  ];
 
 
   // Form states
@@ -116,13 +104,18 @@ export default function AdminEditBookingDialog({ row, vehiclesRow, supabaseClien
       let driversLicenseFilename: string | null = null;
       let validIdFilename: string | null = null;
 
-      if (paymentReceipts && paymentReceipts[0])
-        receiptFilename = await uploadToBucket("receipts", paymentReceipts[0], row.payment_receipt_image);
-      if (driversLicense && driversLicense[0])
-        driversLicenseFilename = await uploadToBucket("drivers_license", driversLicense[0], row.drivers_license_image);
-      if (validId && validId[0])
-        validIdFilename = await uploadToBucket("ids", validId[0], row.valid_id_image);
-
+      if (paymentReceipts && paymentReceipts[0]) {
+        await deleteFromBucket(RECEIPTS_BUCKET, [row.payment_receipt_image]);
+        receiptFilename = await uploadToBucket(RECEIPTS_BUCKET, paymentReceipts[0].file);
+      }
+      if (driversLicense && driversLicense[0]) {
+        await deleteFromBucket(DRIVERS_LICENSE_BUCKET, [row.drivers_license_image]);
+        driversLicenseFilename = await uploadToBucket(DRIVERS_LICENSE_BUCKET, driversLicense[0].file);
+      }
+      if (validId && validId[0]) {
+        await deleteFromBucket(IDS_BUCKET, [row.valid_id_image]);
+        validIdFilename = await uploadToBucket(IDS_BUCKET, validId[0].file);
+      }
 
       const foundVehiclesIndex = vehiclesRow.findIndex(e => e.id === vehicle);
       const vehicleAmount = vehiclesRow[foundVehiclesIndex].daily_price;
@@ -165,11 +158,10 @@ export default function AdminEditBookingDialog({ row, vehiclesRow, supabaseClien
           amount: totalAmount
         })
         .eq("id", row.id)
-        .select("*, vehicles(model, vehicle_colors(name))")
+        .select(SELECT_BOOKING_QUERY)
         .single();
 
-      if (error)
-        return toast.error("Failed to Update Booking", { description: error.message });
+      if (error) return toast.error("Failed to Update Booking", { description: error.message });
 
       toast.success("Booking Updated Successfully");
       onRowUpdate(data);
@@ -205,46 +197,6 @@ export default function AdminEditBookingDialog({ row, vehiclesRow, supabaseClien
     return false;
   }
 
-  function getDaysBetween(date1: Date, date2: Date) {
-    const d1 = new Date(date1);
-    const d2 = new Date(date2);
-    const diffInMs = Math.abs(d2.getTime() - d1.getTime());
-    const msInDay = 1000 * 60 * 60 * 24;
-
-    return Math.floor(diffInMs / msInDay);
-  }
-
-  function generateUniqueFilePath(file: FilePondFile, userId?: string): string {
-    const fileExt = file.file.name.split('.').pop()?.toLowerCase() ?? ''
-    const uuid = crypto.randomUUID()
-    const timestamp = Date.now()
-    const fileName = `${timestamp}-${uuid}${fileExt ? `.${fileExt}` : ''}`
-
-    return userId ? `${userId}/${fileName}` : fileName
-  }
-
-  async function uploadToBucket(bucket: string, file: FilePondFile, filename: string) {
-    const generatedFilename = generateUniqueFilePath(file);
-
-    const { error: deletionError } = await supabaseClient
-      .storage
-      .from(bucket)
-      .remove([filename]);
-
-    if (deletionError) throw deletionError;
-
-    const { error } = await supabaseClient
-      .storage
-      .from(bucket)
-      .upload(generatedFilename, file.file, {
-        cacheControl: "3600",
-        upsert: false
-      });
-
-    if (error) throw error;
-    return generatedFilename;
-  }
-
   // Use effects
   useEffect(() => {
     function mapVehicleMenuItems() {
@@ -273,7 +225,7 @@ export default function AdminEditBookingDialog({ row, vehiclesRow, supabaseClien
       setFacebookAccount(row.facebook_account);
       setPaymentMethod(row.payment_method);
 
-      setIsDelivery(row.is_delivery ? true : false);
+      setIsDelivery(!!row.is_delivery);
       setDeliveryAddress(row.address_for_delivery);
       setDeliveryFee(row.delivery_fee);
       setPickupFee(row.pickup_fee);

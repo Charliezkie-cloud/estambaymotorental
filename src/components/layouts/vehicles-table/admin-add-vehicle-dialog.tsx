@@ -1,5 +1,5 @@
 import { Loader2, PlusIcon } from "lucide-react";
-import { ActualFileObject, FilePondFile } from "filepond";
+import { FilePondFile } from "filepond";
 import React, { useEffect, useState } from "react";
 import { FilePond } from "react-filepond";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { VehicleColorRow, VehicleRow } from "@/types/models.types";
 import { Database } from "@/types/database.types";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { uploadToBucket, VEHICLES_BUCKET } from "@/lib/storage-helpers";
+import { SELECT_VEHICLES_QUERY } from "@/lib/table-helpers";
 
 type Props = {
   supabaseClient: SupabaseClient<Database>;
@@ -64,7 +66,7 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
 
     try {
       const imageFile = modelImage[0].file;
-      const newImageFileName = generateFileName(imageFile);
+      const newImageFileName = await uploadToBucket(VEHICLES_BUCKET, imageFile);
 
       const { data, error } = await supabaseClient
         .from("vehicles")
@@ -78,26 +80,19 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
           image: newImageFileName,
           status: status ?? 1
         })
-        .select("*, vehicle_colors(name)")
+        .select(SELECT_VEHICLES_QUERY)
         .single();
 
       if (error)
         return toast.error("Failed to Add Vehicle", { description: error.message });
 
-      const { error: storageError } = await supabaseClient
-        .storage
-        .from("vehicles")
-        .upload(newImageFileName, imageFile, {
-          cacheControl: "3600",
-          upsert: false
-        });
-
-      if (storageError)
-        return toast.error("Failed to Upload Vehicle Image", { description: storageError.message });
-
       toast.success("Vehicle Added Successfully");
       setOpen(false);
       onRowAdd(data);
+    } catch (error) {
+      toast.error("Something went wrong while adding the vehicle", {
+        description: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setLoading(false);
     }
@@ -112,18 +107,6 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
     if (halfDayPrice && halfDayPrice < 0) return "Half day price cannot be negative.";
     if (hourlyPrice && hourlyPrice < 0) return "Hourly price cannot be negative.";
     return false;
-  }
-
-  function generateFileName(file: ActualFileObject) {
-    const fileExtension = file.name.split(".").pop()?.toLowerCase();
-    const baseName = file.name
-      .substring(0, file.name.lastIndexOf('.'))
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-');
-    const uniqueId = crypto.randomUUID();
-
-    return `${uniqueId}-${baseName}.${fileExtension}`;
   }
 
   // Use effects

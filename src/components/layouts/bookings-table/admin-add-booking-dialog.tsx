@@ -26,37 +26,23 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import { ActualFileObject, FilePondFile } from "filepond";
-import { FilePond, registerPlugin } from "react-filepond";
+import { FilePondFile } from "filepond";
+import { FilePond } from "react-filepond";
 import { motion, AnimatePresence } from "motion/react";
 
-import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
-import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
-import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
-
-import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
-import "filepond/dist/filepond.min.css";
 import "yet-another-react-lightbox/styles.css";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-
-// Register filepond plugins
-registerPlugin(
-  FilePondPluginImagePreview,
-  FilePondPluginFileValidateType,
-  FilePondPluginFileValidateSize,
-);
+import { MenuItem, paymentMethodMenuItems, paymentStatusMenuItems, bookingStatusMenuItems } from "@/lib/menu-items-data";
+import { DRIVERS_LICENSE_BUCKET, IDS_BUCKET, RECEIPTS_BUCKET, uploadToBucket } from "@/lib/storage-helpers";
+import { SELECT_BOOKING_QUERY } from "@/lib/table-helpers";
+import { getDaysBetween } from "@/lib/date-time-helpers";
 
 type Props = {
   supabaseClient: SupabaseClient<Database>;
   vehiclesRow: VehicleRow[];
   onRowAdd: (e: BookingRow) => void;
-};
-
-type MenuItem = {
-  value: number | string;
-  label: string;
 };
 
 export default function AdminAddBookingDialog({ vehiclesRow, supabaseClient, onRowAdd }: Props) {
@@ -65,23 +51,6 @@ export default function AdminAddBookingDialog({ vehiclesRow, supabaseClient, onR
 
   // Menu items
   const [vehicleMenuItems, setVehicleMenuItems] = useState<MenuItem[]>([]);
-  const paymentMethodMenuItems: MenuItem[] = [
-    { value: "GCash", label: "GCash" },
-    { value: "GoTyme", label: "GoTyme" },
-    { value: "Bank Transfer", label: "Bank Transfer" },
-  ];
-  const bookingStatusMenuItems: MenuItem[] = [
-    { value: 1, label: "Completed" },
-    { value: 2, label: "Change Unit" },
-    { value: 3, label: "Reserved" },
-    { value: 4, label: "Rescheduled" },
-    { value: 5, label: "Cancelled" },
-  ];
-  const paymentStatusMenuItems: MenuItem[] = [
-    { value: 1, label: "Paid" },
-    { value: 2, label: "Partially Paid" },
-    { value: 3, label: "Pending" },
-  ];
 
   // Form states
   const [vehicle, setVehicle] = useState<number | null>(null);
@@ -136,9 +105,9 @@ export default function AdminAddBookingDialog({ vehiclesRow, supabaseClient, onR
     try {
       const dateNow = new Date();
       const numberOfDaysRent = getDaysBetween(rentalDate ?? dateNow, returnDate ?? dateNow);
-      const receiptFilename = await uploadToBucket("receipts", paymentReceipts[0]);
-      const driversLicenseFilename = await uploadToBucket("drivers_license", driversLicense[0]);
-      const validIdFilename = await uploadToBucket("ids", validId[0]);
+      const receiptFilename = await uploadToBucket(RECEIPTS_BUCKET, paymentReceipts[0].file);
+      const driversLicenseFilename = await uploadToBucket(DRIVERS_LICENSE_BUCKET, driversLicense[0].file);
+      const validIdFilename = await uploadToBucket(IDS_BUCKET, validId[0].file);
 
       const foundVehiclesIndex = vehiclesRow.findIndex(e => e.id === vehicle);
       const vehicleAmount = vehiclesRow[foundVehiclesIndex].daily_price;
@@ -180,11 +149,10 @@ export default function AdminAddBookingDialog({ vehiclesRow, supabaseClient, onR
 
           amount: totalAmount
         })
-        .select("*, vehicles(model)")
+        .select(SELECT_BOOKING_QUERY)
         .single();
 
-      if (error)
-        return toast.error("Failed to Add Booking", { description: error.message });
+      if (error) return toast.error("Failed to Add Booking", { description: error.message });
 
       toast.success("Booking Added Successfully");
       setOpen(false);
@@ -218,39 +186,6 @@ export default function AdminAddBookingDialog({ vehiclesRow, supabaseClient, onR
     if (pickupFee && pickupFee < 0) return "Pickup fee cannot be a negative number.";
 
     return false;
-  }
-
-  function getDaysBetween(date1: Date, date2: Date) {
-    const d1 = new Date(date1);
-    const d2 = new Date(date2);
-    const diffInMs = Math.abs(d2.getTime() - d1.getTime());
-    const msInDay = 1000 * 60 * 60 * 24;
-
-    return Math.floor(diffInMs / msInDay);
-  }
-
-  function generateUniqueFilePath(file: FilePondFile, userId?: string): string {
-    const fileExt = file.file.name.split('.').pop()?.toLowerCase() ?? ''
-    const uuid = crypto.randomUUID()
-    const timestamp = Date.now()
-    const fileName = `${timestamp}-${uuid}${fileExt ? `.${fileExt}` : ''}`
-
-    return userId ? `${userId}/${fileName}` : fileName
-  }
-
-  async function uploadToBucket(bucket: string, file: FilePondFile) {
-    const generatedFilename = generateUniqueFilePath(file);
-
-    const { error } = await supabaseClient
-      .storage
-      .from(bucket)
-      .upload(generatedFilename, file.file, {
-        cacheControl: "3600",
-        upsert: false
-      });
-
-    if (error) throw error;
-    return generatedFilename;
   }
 
   // Use effects

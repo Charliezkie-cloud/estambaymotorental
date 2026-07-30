@@ -12,6 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import { deleteFromBucket, VEHICLES_BUCKET } from "@/lib/storage-helpers";
+import { SELECT_VEHICLES_QUERY } from "@/lib/table-helpers";
 
 type Props = {
   supabaseClient: SupabaseClient<Database>;
@@ -34,16 +36,10 @@ export default function AdminDeleteVehicleDialog({ supabaseClient, row, onRowDel
         .from("vehicles")
         .delete()
         .eq("id", row.id)
-        .select("*, vehicle_colors(name)")
+        .select(SELECT_VEHICLES_QUERY)
         .single();
 
-      const { error: storageError } = await supabaseClient
-        .storage
-        .from("vehicles")
-        .remove([row.image]);
-
-      if (storageError)
-        return toast.error("Failed to Delete Vehicle Image", { description: storageError.message });
+      await deleteFromBucket(VEHICLES_BUCKET, [row.image]);
 
       if (error)
         return toast.error("Failed to Delete Vehicle", { description: error.message });

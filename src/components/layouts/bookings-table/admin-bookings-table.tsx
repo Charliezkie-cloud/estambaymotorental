@@ -19,6 +19,24 @@ import { Badge } from "@/components/ui/badge";
 import AdminEditBookingDialog from "@/components/layouts/bookings-table/admin-edit-booking-dialog";
 import AdminDetailsBookingDialog from "@/components/layouts/bookings-table/admin-details-booking-dialog";
 import AdminDeleteBookingDialog from "@/components/layouts/bookings-table/admin-delete-booking-dialog";
+import { SELECT_BOOKING_QUERY, SELECT_VEHICLES_QUERY } from "@/lib/table-helpers";
+import { getSignedUrl } from "@/lib/storage-helpers";
+
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
+import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
+import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
+
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
+import "filepond/dist/filepond.min.css";
+import { registerPlugin } from "react-filepond";
+
+// Register filepond plugins
+registerPlugin(
+  FilePondPluginImagePreview,
+  FilePondPluginFileValidateType,
+  FilePondPluginFileValidateSize,
+);
+
 
 type Props = {
   supabaseClient: SupabaseClient<Database>;
@@ -74,19 +92,6 @@ export default function AdminBookingsTable({ supabaseClient }: Props) {
     setBookingsRow(prev => prev.filter(e => e.id !== row.id));
   }
 
-  // Helpers
-  async function getSignedUrl(bucket: string, filepath: string) {
-    const { data, error } = await supabaseClient
-      .storage
-      .from(bucket)
-      .createSignedUrl(filepath, 3600);
-
-    if (error)
-      return toast.error("Failed to Fetch the Image",{ description: error.message });
-
-    return data.signedUrl;
-  }
-
   // Use effects
   useEffect(() => {
     if (vehiclesRow.length > 0)
@@ -95,7 +100,7 @@ export default function AdminBookingsTable({ supabaseClient }: Props) {
     async function fetchVehicles() {
       const { data, error } = await supabaseClient
         .from("vehicles")
-        .select("*")
+        .select(SELECT_VEHICLES_QUERY)
         .order("created_at", { ascending: false });
 
       if (error)
@@ -117,7 +122,7 @@ export default function AdminBookingsTable({ supabaseClient }: Props) {
       try {
         const { data, error } = await supabaseClient
           .from("bookings")
-          .select("*, vehicles(model, vehicle_colors(name))")
+          .select(SELECT_BOOKING_QUERY)
           .order("created_at", { ascending: false });
 
         if (error)

@@ -13,6 +13,8 @@ import { BookingRow } from "@/types/models.types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database.types";
 import { toast } from "sonner";
+import { deleteFromBucket, DRIVERS_LICENSE_BUCKET, IDS_BUCKET, RECEIPTS_BUCKET } from "@/lib/storage-helpers";
+import { SELECT_BOOKING_QUERY } from "@/lib/table-helpers";
 
 type Props = {
   row?: BookingRow;
@@ -32,19 +34,18 @@ export default function AdminDeleteBookingDialog({ row, supabaseClient, onCancel
     setLoading(true);
 
     try {
-      await deleteFromBucket("receipts", row.payment_receipt_image);
-      await deleteFromBucket("drivers_license", row.drivers_license_image);
-      await deleteFromBucket("ids", row.valid_id_image);
+      await deleteFromBucket(RECEIPTS_BUCKET, [row.payment_receipt_image]);
+      await deleteFromBucket(DRIVERS_LICENSE_BUCKET, [row.drivers_license_image]);
+      await deleteFromBucket(IDS_BUCKET, [row.valid_id_image]);
 
       const { data, error } = await supabaseClient
         .from("bookings")
         .delete()
         .eq("id", row.id)
-        .select("*, vehicles(model, vehicle_colors(name))")
+        .select(SELECT_BOOKING_QUERY)
         .single();
 
-      if (error)
-        return toast.error("Failed to Delete Booking", { description: error.message });
+      if (error) return toast.error("Failed to Delete Booking", { description: error.message });
 
       toast.success("Booking Deleted Successfully");
       onDelete(data);
@@ -55,16 +56,6 @@ export default function AdminDeleteBookingDialog({ row, supabaseClient, onCancel
     } finally {
       setLoading(false);
     }
-  }
-
-  // Helpers
-  async function deleteFromBucket(bucket: string, filepath: string) {
-    const { error } = await supabaseClient
-      .storage
-      .from(bucket)
-      .remove([filepath])
-
-    if (error) throw error;
   }
 
   return (
