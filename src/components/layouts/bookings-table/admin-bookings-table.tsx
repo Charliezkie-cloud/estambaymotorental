@@ -18,6 +18,7 @@ import { MoreHorizontalIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import AdminEditBookingDialog from "@/components/layouts/bookings-table/admin-edit-booking-dialog";
 import AdminDetailsBookingDialog from "@/components/layouts/bookings-table/admin-details-booking-dialog";
+import AdminDeleteBookingDialog from "@/components/layouts/bookings-table/admin-delete-booking-dialog";
 
 type Props = {
   supabaseClient: SupabaseClient<Database>;
@@ -29,6 +30,7 @@ export default function AdminBookingsTable({ supabaseClient }: Props) {
   const [bookingsRow, setBookingsRow] = useState<BookingRow[]>([]);
   const [updateBookingRow, setUpdateBookingRow] = useState<BookingRow | undefined>(undefined);
   const [detailsBookingRow, setDetailsBookingRow] = useState<BookingRow | undefined>(undefined);
+  const [deleteBookingRow, setDeleteBookingRow] = useState<BookingRow | undefined>(undefined);
   const [loading, setLoading] = useState(false);
 
   // Handlers
@@ -65,6 +67,11 @@ export default function AdminBookingsTable({ supabaseClient }: Props) {
       drivers_license_image_url: typeof driversLicenseImageUrl === "string" ? driversLicenseImageUrl : "",
       valid_id_image_url: typeof validIdImageUrl === "string" ? validIdImageUrl : ""
     } : e));
+  }
+
+  async function onRowDelete(row: BookingRow) {
+    setDeleteBookingRow(undefined);
+    setBookingsRow(prev => prev.filter(e => e.id !== row.id));
   }
 
   // Helpers
@@ -151,6 +158,10 @@ export default function AdminBookingsTable({ supabaseClient }: Props) {
                               onCancel={() => setUpdateBookingRow(undefined)} />
       <AdminDetailsBookingDialog row={detailsBookingRow}
                                  onClose={() => setDetailsBookingRow(undefined)} />
+      <AdminDeleteBookingDialog supabaseClient={supabaseClient}
+                                row={deleteBookingRow}
+                                onCancel={() => setDeleteBookingRow(undefined)}
+                                onDelete={onRowDelete} />
 
       <div className="flex">
         <AdminAddBookingDialog supabaseClient={supabaseClient}
@@ -226,7 +237,7 @@ export default function AdminBookingsTable({ supabaseClient }: Props) {
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
                       <DropdownMenuGroup>
-                        <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+                        <DropdownMenuItem variant="destructive" onClick={() => setDeleteBookingRow(item)}>Delete</DropdownMenuItem>
                       </DropdownMenuGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>

@@ -241,8 +241,7 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
                             maxFileSize="10MB"
                             allowFileTypeValidation
                             allowFileSizeValidation
-                            className="filepond--dark"
-                            required />
+                            className="filepond--dark" />
                   <FieldDescription>Upload a clear photo of the actual unit.</FieldDescription>
                 </Field>
               </FieldGroup>

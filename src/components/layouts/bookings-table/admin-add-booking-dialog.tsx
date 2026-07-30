@@ -432,8 +432,7 @@ export default function AdminAddBookingDialog({ vehiclesRow, supabaseClient, onR
                               maxFileSize="10MB"
                               className="filepond--dark"
                               allowFileTypeValidation
-                              allowFileSizeValidation
-                              required />
+                              allowFileSizeValidation />
                     <FieldDescription>Upload a clear photo of the receipt.</FieldDescription>
                   </Field>
 
@@ -446,8 +445,7 @@ export default function AdminAddBookingDialog({ vehiclesRow, supabaseClient, onR
                               maxFileSize="10MB"
                               className="filepond--dark"
                               allowFileTypeValidation
-                              allowFileSizeValidation
-                              required />
+                              allowFileSizeValidation />
                     <FieldDescription>Upload a clear photo of the renters driver license.</FieldDescription>
                   </Field>
 
@@ -460,8 +458,7 @@ export default function AdminAddBookingDialog({ vehiclesRow, supabaseClient, onR
                               maxFileSize="10MB"
                               className="filepond--dark"
                               allowFileTypeValidation
-                              allowFileSizeValidation
-                              required />
+                              allowFileSizeValidation />
                     <FieldDescription>Upload a clear photo of the renters valid ID.</FieldDescription>
                   </Field>
                 </FieldGroup>
