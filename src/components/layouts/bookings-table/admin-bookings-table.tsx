@@ -2,8 +2,6 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminAddBookingDialog from "@/components/layouts/bookings-table/admin-add-booking-dialog";
-import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "@/types/database.types";
 import { BookingRow, VehicleRow } from "@/types/models.types";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -19,8 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import AdminEditBookingDialog from "@/components/layouts/bookings-table/admin-edit-booking-dialog";
 import AdminDetailsBookingDialog from "@/components/layouts/bookings-table/admin-details-booking-dialog";
 import AdminDeleteBookingDialog from "@/components/layouts/bookings-table/admin-delete-booking-dialog";
-import { SELECT_BOOKING_QUERY, SELECT_VEHICLES_QUERY } from "@/lib/helpers/table-helpers";
-import { getSignedUrl } from "@/lib/supabase/supabase-storage";
 
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
@@ -29,6 +25,8 @@ import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import "filepond/dist/filepond.min.css";
 import { registerPlugin } from "react-filepond";
+import { getAllBookings } from "@/lib/supabase/tables/bookings-table";
+import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
 
 // Register filepond plugins
 registerPlugin(
@@ -37,12 +35,7 @@ registerPlugin(
   FilePondPluginFileValidateSize,
 );
 
-
-type Props = {
-  supabaseClient: SupabaseClient<Database>;
-};
-
-export default function AdminBookingsTable({ supabaseClient }: Props) {
+export default function AdminBookingsTable() {
   // States
   const [vehiclesRow, setVehiclesRow] = useState<VehicleRow[]>([]);
   const [bookingsRow, setBookingsRow] = useState<BookingRow[]>([]);
@@ -52,100 +45,48 @@ export default function AdminBookingsTable({ supabaseClient }: Props) {
   const [loading, setLoading] = useState(false);
 
   // Handlers
-  async function onRowAdd(row: BookingRow) {
-    const [receiptImageUrl, driversLicenseImageUrl, validIdImageUrl] = await Promise.all([
-      getSignedUrl("receipts", row.payment_receipt_image),
-      getSignedUrl("drivers_license", row.drivers_license_image),
-      getSignedUrl("ids", row.valid_id_image)
-    ]);
-
-    setBookingsRow(prev => [
-      ...prev,
-      {
-        ...row,
-        receipt_image_url: typeof receiptImageUrl === "string" ? receiptImageUrl : "",
-        drivers_license_image_url: typeof driversLicenseImageUrl === "string" ? driversLicenseImageUrl : "",
-        valid_id_image_url: typeof validIdImageUrl === "string" ? validIdImageUrl : ""
-      }
-    ]);
+  async function onRowAdd(row: BookingRow | null) {
+    if (!row) return null;
+    setBookingsRow(prev => [...prev, row]);
   }
 
-  async function onRowUpdate(row: BookingRow) {
+  async function onRowUpdate(row: BookingRow | null) {
     setUpdateBookingRow(undefined);
-
-    const [receiptImageUrl, driversLicenseImageUrl, validIdImageUrl] = await Promise.all([
-      getSignedUrl("receipts", row.payment_receipt_image),
-      getSignedUrl("drivers_license", row.drivers_license_image),
-      getSignedUrl("ids", row.valid_id_image)
-    ]);
-
-    setBookingsRow(prev => prev.map(e => e.id === row.id ? {
-      ...row,
-      receipt_image_url: typeof receiptImageUrl === "string" ? receiptImageUrl : "",
-      drivers_license_image_url: typeof driversLicenseImageUrl === "string" ? driversLicenseImageUrl : "",
-      valid_id_image_url: typeof validIdImageUrl === "string" ? validIdImageUrl : ""
-    } : e));
+    if (!row) return;
+    setBookingsRow(prev => prev.map(e => e.id === row.id ? row : e));
   }
 
-  async function onRowDelete(row: BookingRow) {
+  async function onRowDelete(row: BookingRow | null) {
     setDeleteBookingRow(undefined);
+    if (!row) return;
     setBookingsRow(prev => prev.filter(e => e.id !== row.id));
   }
 
   // Use effects
   useEffect(() => {
-    if (vehiclesRow.length > 0)
-      return;
+    if (vehiclesRow.length > 0) return;
 
     async function fetchVehicles() {
-      const { data, error } = await supabaseClient
-        .from("vehicles")
-        .select(SELECT_VEHICLES_QUERY)
-        .order("created_at", { ascending: false });
-
-      if (error)
-        return toast.error("Failed to Fetch Vehicles", { description: error.message });
-
-      setVehiclesRow(data);
+      const data = await getAllVehicles();
+      setVehiclesRow(data ?? []);
     }
 
     fetchVehicles();
   }, []);
 
   useEffect(() => {
-    if (bookingsRow.length > 0)
-      return;
+    if (bookingsRow.length > 0) return;
 
     async function fetchBookings() {
       setLoading(true);
 
       try {
-        const { data, error } = await supabaseClient
-          .from("bookings")
-          .select(SELECT_BOOKING_QUERY)
-          .order("created_at", { ascending: false });
-
-        if (error)
-          return toast.error("Failed to Fetch Bookings", { description: error.message });
-
-        const updatedBookings: BookingRow[] = await Promise.all(
-          data.map(async (e) => {
-            const [receiptImageUrl, driversLicenseImageUrl, validIdImageUrl] = await Promise.all([
-              getSignedUrl("receipts", e.payment_receipt_image),
-              getSignedUrl("drivers_license", e.drivers_license_image),
-              getSignedUrl("ids", e.valid_id_image)
-            ]);
-
-            return {
-              ...e,
-              receipt_image_url: typeof receiptImageUrl === "string" ? receiptImageUrl : "",
-              drivers_license_image_url: typeof driversLicenseImageUrl === "string" ? driversLicenseImageUrl : "",
-              valid_id_image_url: typeof validIdImageUrl === "string" ? validIdImageUrl : ""
-            };
-          })
-        );
-
-        setBookingsRow(updatedBookings);
+        const data = await getAllBookings();
+        setBookingsRow(data ?? []);
+      } catch (error) {
+        toast.error("Failed to Fetch Bookings", {
+          description: error instanceof Error ? error.message : String(error)
+        });
       } finally {
         setLoading(false);
       }
@@ -156,22 +97,27 @@ export default function AdminBookingsTable({ supabaseClient }: Props) {
 
   return (
     <div className="space-y-3 bg-card border border-border p-4 rounded-xl">
-      <AdminEditBookingDialog supabaseClient={supabaseClient}
-                              vehiclesRow={vehiclesRow}
-                              row={updateBookingRow}
-                              onRowUpdate={onRowUpdate}
-                              onCancel={() => setUpdateBookingRow(undefined)} />
-      <AdminDetailsBookingDialog row={detailsBookingRow}
-                                 onClose={() => setDetailsBookingRow(undefined)} />
-      <AdminDeleteBookingDialog supabaseClient={supabaseClient}
-                                row={deleteBookingRow}
-                                onCancel={() => setDeleteBookingRow(undefined)}
-                                onDelete={onRowDelete} />
+      <AdminEditBookingDialog
+        vehiclesRow={vehiclesRow}
+        row={updateBookingRow}
+        onRowUpdate={onRowUpdate}
+        onCancel={() => setUpdateBookingRow(undefined)}
+      />
+      <AdminDetailsBookingDialog
+        row={detailsBookingRow}
+        onClose={() => setDetailsBookingRow(undefined)}
+      />
+      <AdminDeleteBookingDialog
+        row={deleteBookingRow}
+        onCancel={() => setDeleteBookingRow(undefined)}
+        onDelete={onRowDelete}
+      />
 
       <div className="flex">
-        <AdminAddBookingDialog supabaseClient={supabaseClient}
-                               vehiclesRow={vehiclesRow}
-                               onRowAdd={onRowAdd} />
+        <AdminAddBookingDialog
+          vehiclesRow={vehiclesRow}
+          onRowAdd={onRowAdd}
+        />
       </div>
 
       <Table className="max-h-[750px]">

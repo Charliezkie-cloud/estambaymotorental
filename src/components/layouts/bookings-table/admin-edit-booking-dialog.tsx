@@ -29,33 +29,22 @@ import { Label } from "@/components/ui/label";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect, useState } from "react";
 import { BookingRow, VehicleRow } from "@/types/models.types";
-import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "@/types/database.types";
 import { FilePondFile } from "filepond";
 import { toast } from "sonner";
-import {
-  deleteFromBucket,
-  DRIVERS_LICENSE_BUCKET,
-  IDS_BUCKET,
-  RECEIPTS_BUCKET,
-  uploadToBucket
-} from "@/lib/supabase/supabase-storage";
 import { getDaysBetween } from "@/lib/helpers/date-time-helpers";
 import { MenuItem, paymentStatusMenuItems, paymentMethodMenuItems, bookingStatusMenuItems } from "@/lib/data/menu-items-data";
-import { SELECT_BOOKING_QUERY } from "@/lib/helpers/table-helpers";
+import { updateBooking } from "@/lib/supabase/tables/bookings-table";
 
 type Props = {
   row?: BookingRow;
-  supabaseClient: SupabaseClient<Database>;
   vehiclesRow: VehicleRow[];
-  onRowUpdate: (e: BookingRow) => void;
+  onRowUpdate: (e: BookingRow | null) => void;
   onCancel: () => void;
 };
 
-export default function AdminEditBookingDialog({ row, vehiclesRow, supabaseClient, onRowUpdate, onCancel }: Props) {
+export default function AdminEditBookingDialog({ row, vehiclesRow, onRowUpdate, onCancel }: Props) {
   // Menu items
   const [vehicleMenuItems, setVehicleMenuItems] = useState<MenuItem[]>([]);
-
 
   // Form states
   const [vehicle, setVehicle] = useState<number | null>(null);
@@ -99,74 +88,52 @@ export default function AdminEditBookingDialog({ row, vehiclesRow, supabaseClien
     try {
       const dateNow = new Date();
       const numberOfDaysRent = getDaysBetween(rentalDate ?? dateNow, returnDate ?? dateNow);
-
-      let receiptFilename: string | null = null;
-      let driversLicenseFilename: string | null = null;
-      let validIdFilename: string | null = null;
-
-      if (paymentReceipts && paymentReceipts[0]) {
-        await deleteFromBucket(RECEIPTS_BUCKET, [row.payment_receipt_image]);
-        receiptFilename = await uploadToBucket(RECEIPTS_BUCKET, paymentReceipts[0].file);
-      }
-      if (driversLicense && driversLicense[0]) {
-        await deleteFromBucket(DRIVERS_LICENSE_BUCKET, [row.drivers_license_image]);
-        driversLicenseFilename = await uploadToBucket(DRIVERS_LICENSE_BUCKET, driversLicense[0].file);
-      }
-      if (validId && validId[0]) {
-        await deleteFromBucket(IDS_BUCKET, [row.valid_id_image]);
-        validIdFilename = await uploadToBucket(IDS_BUCKET, validId[0].file);
-      }
-
       const foundVehiclesIndex = vehiclesRow.findIndex(e => e.id === vehicle);
       const vehicleAmount = vehiclesRow[foundVehiclesIndex].daily_price;
-
       let deliveryAmount = 0;
+
       if (isDelivery) {
         deliveryAmount += deliveryFee ?? 0;
         deliveryAmount += pickupFee ?? 0;
       }
 
       const totalAmount = vehicleAmount + deliveryAmount;
+      const data = await updateBooking({
+        id: row.id ?? -1,
+        vehicle_id: vehicle ?? -1,
 
-      const { data, error } = await supabaseClient
-        .from("bookings")
-        .update({
-          vehicle_id: vehicle ?? -1,
+        number_of_days_rent: numberOfDaysRent,
+        rental_date:  rentalDate ? rentalDate.toDateString() : dateNow.toDateString(),
+        time_of_rental: rentalTime ?? dateNow.toTimeString(),
+        return_date:  returnDate ? returnDate.toDateString() : dateNow.toDateString(),
+        time_of_return: returnTime ?? dateNow.toTimeString(),
 
-          number_of_days_rent: numberOfDaysRent,
-          rental_date:  rentalDate ? rentalDate.toDateString() : dateNow.toDateString(),
-          time_of_rental: rentalTime ?? dateNow.toTimeString(),
-          return_date:  returnDate ? returnDate.toDateString() : dateNow.toDateString(),
-          time_of_return: returnTime ?? dateNow.toTimeString(),
+        full_name: fullName ?? "",
+        phone_number: phoneNumber ?? "",
+        facebook_account: facebookAccount ?? "",
+        payment_method: paymentMethod ?? "",
+        oldPaymentReceiptImageFilename: row.payment_receipt_image,
+        oldDriversLicenseImageFilename: row.drivers_license_image,
+        oldValidIdImageFilename: row.valid_id_image,
+        newPaymentReceiptImageFile: paymentReceipts ? paymentReceipts[0].file : undefined,
+        newDriversLicenseImageFile: driversLicense ? driversLicense[0].file : undefined,
+        newValidIdImageFile: validId ? validId[0].file : undefined,
 
-          full_name: fullName ?? "",
-          phone_number: phoneNumber ?? "",
-          facebook_account: facebookAccount ?? "",
-          payment_method: paymentMethod ?? "",
-          ...(receiptFilename && { payment_receipt_image: receiptFilename }),
-          ...(driversLicenseFilename && { drivers_license_image: driversLicenseFilename }),
-          ...(validIdFilename && { valid_id_image: validIdFilename }),
+        is_delivery: isDelivery ? 1 : 0,
+        address_for_delivery: deliveryAddress ?? "",
+        delivery_fee: deliveryFee ?? 0,
+        pickup_fee: pickupFee ?? 0,
 
-          is_delivery: isDelivery ? 1 : 0,
-          address_for_delivery: deliveryAddress ?? "",
-          delivery_fee: deliveryFee ?? 0,
-          pickup_fee: pickupFee ?? 0,
+        booking_status: bookingStatus ?? 3,
+        payment_status: paymentStatus ?? 3,
 
-          booking_status: bookingStatus ?? 3,
-          payment_status: paymentStatus ?? 3,
-
-          amount: totalAmount
-        })
-        .eq("id", row.id)
-        .select(SELECT_BOOKING_QUERY)
-        .single();
-
-      if (error) return toast.error("Failed to Update Booking", { description: error.message });
+        amount: totalAmount
+      });
 
       toast.success("Booking Updated Successfully");
       onRowUpdate(data);
     } catch (error) {
-      toast.error("Something went wrong while updating the booking", {
+      toast.error("Failed to Update Booking", {
         description: error instanceof Error ? error.message : String(error)
       });
     } finally {

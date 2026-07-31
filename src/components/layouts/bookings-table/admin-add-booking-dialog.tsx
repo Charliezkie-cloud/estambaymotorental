@@ -7,8 +7,6 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { ChevronDownIcon, Loader2, PlusIcon } from "lucide-react";
-import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "@/types/database.types";
 import React, { useEffect, useState } from "react";
 import {
   Field,
@@ -31,21 +29,20 @@ import { FilePond } from "react-filepond";
 import { motion, AnimatePresence } from "motion/react";
 
 import "yet-another-react-lightbox/styles.css";
+
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { MenuItem, paymentMethodMenuItems, paymentStatusMenuItems, bookingStatusMenuItems } from "@/lib/data/menu-items-data";
-import { DRIVERS_LICENSE_BUCKET, IDS_BUCKET, RECEIPTS_BUCKET, uploadToBucket } from "@/lib/supabase/supabase-storage";
-import { SELECT_BOOKING_QUERY } from "@/lib/helpers/table-helpers";
 import { getDaysBetween } from "@/lib/helpers/date-time-helpers";
+import { createBooking } from "@/lib/supabase/tables/bookings-table";
 
 type Props = {
-  supabaseClient: SupabaseClient<Database>;
   vehiclesRow: VehicleRow[];
-  onRowAdd: (e: BookingRow) => void;
+  onRowAdd: (e: BookingRow | null) => void;
 };
 
-export default function AdminAddBookingDialog({ vehiclesRow, supabaseClient, onRowAdd }: Props) {
+export default function AdminAddBookingDialog({ vehiclesRow, onRowAdd }: Props) {
   // States
   const [open, setOpen] = useState(false);
 
@@ -105,58 +102,51 @@ export default function AdminAddBookingDialog({ vehiclesRow, supabaseClient, onR
     try {
       const dateNow = new Date();
       const numberOfDaysRent = getDaysBetween(rentalDate ?? dateNow, returnDate ?? dateNow);
-      const receiptFilename = await uploadToBucket(RECEIPTS_BUCKET, paymentReceipts[0].file);
-      const driversLicenseFilename = await uploadToBucket(DRIVERS_LICENSE_BUCKET, driversLicense[0].file);
-      const validIdFilename = await uploadToBucket(IDS_BUCKET, validId[0].file);
-
       const foundVehiclesIndex = vehiclesRow.findIndex(e => e.id === vehicle);
       const vehicleAmount = vehiclesRow[foundVehiclesIndex].daily_price;
-
       let deliveryAmount = 0;
+
       if (isDelivery) {
         deliveryAmount += deliveryFee ?? 0;
         deliveryAmount += pickupFee ?? 0;
       }
 
       const totalAmount = vehicleAmount + deliveryAmount;
+      const data = await createBooking({
+        vehicle_id: vehicle ?? -1,
 
-      const { data, error } = await supabaseClient
-        .from("bookings")
-        .insert({
-          vehicle_id: vehicle ?? -1,
+        number_of_days_rent: numberOfDaysRent,
+        rental_date:  rentalDate ? rentalDate.toDateString() : dateNow.toDateString(),
+        time_of_rental: rentalTime ?? dateNow.toTimeString(),
+        return_date:  returnDate ? returnDate.toDateString() : dateNow.toDateString(),
+        time_of_return: returnTime ?? dateNow.toTimeString(),
 
-          number_of_days_rent: numberOfDaysRent,
-          rental_date:  rentalDate ? rentalDate.toDateString() : dateNow.toDateString(),
-          time_of_rental: rentalTime ?? dateNow.toTimeString(),
-          return_date:  returnDate ? returnDate.toDateString() : dateNow.toDateString(),
-          time_of_return: returnTime ?? dateNow.toTimeString(),
+        full_name: fullName ?? "",
+        phone_number: phoneNumber ?? "",
+        facebook_account: facebookAccount ?? "",
+        payment_method: paymentMethod ?? "",
+        paymentReceiptImageFile: paymentReceipts[0].file,
+        driversLicenseImageFile: driversLicense[0].file,
+        validIdImageFile: validId[0].file,
 
-          full_name: fullName ?? "",
-          phone_number: phoneNumber ?? "",
-          facebook_account: facebookAccount ?? "",
-          payment_method: paymentMethod ?? "",
-          payment_receipt_image: receiptFilename,
-          drivers_license_image: driversLicenseFilename,
-          valid_id_image: validIdFilename,
+        is_delivery: isDelivery ? 1 : 0,
+        address_for_delivery: deliveryAddress ?? "",
+        delivery_fee: deliveryFee ?? 0,
+        pickup_fee: pickupFee ?? 0,
 
-          is_delivery: isDelivery ? 1 : 0,
-          address_for_delivery: deliveryAddress ?? "",
-          delivery_fee: deliveryFee ?? 0,
-          pickup_fee: pickupFee ?? 0,
+        booking_status: bookingStatus ?? 3,
+        payment_status: paymentStatus ?? 3,
 
-          booking_status: bookingStatus ?? 3,
-          payment_status: paymentStatus ?? 3,
-
-          amount: totalAmount
-        })
-        .select(SELECT_BOOKING_QUERY)
-        .single();
-
-      if (error) return toast.error("Failed to Add Booking", { description: error.message });
+        amount: totalAmount
+      });
 
       toast.success("Booking Added Successfully");
       setOpen(false);
       onRowAdd(data);
+    } catch (error) {
+      toast.error("Failed to Add Booking", {
+        description: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setLoading(false);
     }
