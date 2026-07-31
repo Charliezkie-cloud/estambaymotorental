@@ -248,6 +248,52 @@ export default function AdminEditBookingDialog({ row, vehiclesRow, supabaseClien
         <div className="overflow-y-auto max-h-[75vh] pe-2">
           <form id="edit-booking-form" onSubmit={onFormSubmit}>
             <FieldSet>
+              <FieldSeparator/>
+              <FieldSet>
+                <FieldLegend>Booking Status</FieldLegend>
+                <FieldDescription>The status of the booking.</FieldDescription>
+
+                <Field>
+                  <FieldLabel htmlFor="booking_status">Booking Status <span className="text-red-400 font-bold">*</span></FieldLabel>
+                  <Select items={bookingStatusMenuItems} value={bookingStatus} onValueChange={e => setBookingStatus(e)} autoComplete="off" name="booking_status" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a Booking Status" />
+                    </SelectTrigger>
+
+                    <SelectContent alignItemWithTrigger>
+                      <SelectGroup>
+                        {bookingStatusMenuItems.map(item => (
+                          <SelectItem key={`edit-booking-booking-status-item-${item.value}`} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>Select a booking status.</FieldDescription>
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="payment_status">Payment Status <span className="text-red-400 font-bold">*</span></FieldLabel>
+                  <Select items={paymentStatusMenuItems} value={paymentStatus} onValueChange={e => setPaymentStatus(e)} autoComplete="off" name="payment_status" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a Payment Status" />
+                    </SelectTrigger>
+
+                    <SelectContent alignItemWithTrigger>
+                      <SelectGroup>
+                        {paymentStatusMenuItems.map(item => (
+                          <SelectItem key={`edit-booking-payment-status-item-${item.value}`} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>Select a booking status.</FieldDescription>
+                </Field>
+              </FieldSet>
+
               <FieldSeparator />
               <FieldSet>
                 <FieldLegend>Rental Details</FieldLegend>
@@ -475,52 +521,6 @@ export default function AdminEditBookingDialog({ row, vehiclesRow, supabaseClien
                   </AnimatePresence>
 
                 </FieldGroup>
-              </FieldSet>
-
-              <FieldSeparator/>
-              <FieldSet>
-                <FieldLegend>Booking Status</FieldLegend>
-                <FieldDescription>The status of the booking.</FieldDescription>
-
-                <Field>
-                  <FieldLabel htmlFor="booking_status">Booking Status <span className="text-red-400 font-bold">*</span></FieldLabel>
-                  <Select items={bookingStatusMenuItems} value={bookingStatus} onValueChange={e => setBookingStatus(e)} autoComplete="off" name="booking_status" required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a Booking Status" />
-                    </SelectTrigger>
-
-                    <SelectContent alignItemWithTrigger>
-                      <SelectGroup>
-                        {bookingStatusMenuItems.map(item => (
-                          <SelectItem key={`edit-booking-booking-status-item-${item.value}`} value={item.value}>
-                            {item.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <FieldDescription>Select a booking status.</FieldDescription>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="payment_status">Payment Status <span className="text-red-400 font-bold">*</span></FieldLabel>
-                  <Select items={paymentStatusMenuItems} value={paymentStatus} onValueChange={e => setPaymentStatus(e)} autoComplete="off" name="payment_status" required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a Payment Status" />
-                    </SelectTrigger>
-
-                    <SelectContent alignItemWithTrigger>
-                      <SelectGroup>
-                        {paymentStatusMenuItems.map(item => (
-                          <SelectItem key={`edit-booking-payment-status-item-${item.value}`} value={item.value}>
-                            {item.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <FieldDescription>Select a booking status.</FieldDescription>
-                </Field>
               </FieldSet>
             </FieldSet>
           </form>

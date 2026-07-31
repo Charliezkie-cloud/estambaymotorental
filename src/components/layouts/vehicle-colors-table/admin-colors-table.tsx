@@ -22,9 +22,11 @@ import {
 type Props = {
   supabaseClient: SupabaseClient<Database>;
   onVehicleColorsFetch: (e: VehicleColorRow[]) => void;
+  onVehicleColorsUpdate: (e: VehicleColorRow[]) => void;
+  onVehicleColorsDelete: (e: VehicleColorRow[]) => void;
 };
 
-export default function AdminColorsTable({ supabaseClient, onVehicleColorsFetch }: Props) {
+export default function AdminColorsTable({ supabaseClient, onVehicleColorsFetch, onVehicleColorsDelete, onVehicleColorsUpdate }: Props) {
 
   // States
   const [vehicleColors, setVehicleColors] = useState<VehicleColorRow[]>([]);
@@ -40,6 +42,7 @@ export default function AdminColorsTable({ supabaseClient, onVehicleColorsFetch 
   function onRowDelete(row: VehicleColorRow) {
     setDeleteRow(undefined);
     setVehicleColors(prev => prev.filter(e => e.id !== row.id));
+    onVehicleColorsDelete(vehicleColors);
   }
 
   function onRowUpdate(row: VehicleColorRow) {
@@ -49,6 +52,7 @@ export default function AdminColorsTable({ supabaseClient, onVehicleColorsFetch 
         e.id === row.id ? row : e
       )
     );
+    onVehicleColorsUpdate(vehicleColors);
   }
 
   // Use effects

@@ -1,5 +1,5 @@
 import { useRouter } from "next/navigation";
-import { Book, Car, Home, Loader2, MotorbikeIcon } from "lucide-react";
+import { Banknote, Book, Car, Home, Loader2, MotorbikeIcon } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
 
@@ -43,6 +43,11 @@ export default function AdminSidebar({ supabaseClient }: Props) {
       title: "Bookings",
       href: "/admin/bookings",
       icon: <Book />
+    },
+    {
+      title: "Payment Methods",
+      href: "/admin/payment-methods",
+      icon: <Banknote />
     },
   ];
 

@@ -190,13 +190,13 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
                 <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
                   <Field>
                     <FieldLabel htmlFor="year_model">Year Model <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" name="year_model" autoComplete="off" placeholder="e.g. 2023" value={yearModel ?? ""} onChange={e => setYearModel(Number.parseInt(e.target.value))} required />
+                    <Input type="number" min={0} name="year_model" autoComplete="off" placeholder="e.g. 2023" value={yearModel ?? 0} onChange={e => setYearModel(Number.parseInt(e.target.value))} required />
                     <FieldDescription>The release or manufacturing year.</FieldDescription>
                   </Field>
 
                   <Field>
                     <FieldLabel htmlFor="daily_price">Daily Price <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" name="daily_price" autoComplete="off" placeholder="e.g. 750.00" value={dailyPrice ?? ""} onChange={e => setDailyPrice(Number.parseInt(e.target.value))} required />
+                    <Input type="number" min={0} name="daily_price" autoComplete="off" placeholder="e.g. 750.00" value={dailyPrice ?? 0} onChange={e => setDailyPrice(Number.parseInt(e.target.value))} required />
                     <FieldDescription>Standard rate for a full 24-hour rental.</FieldDescription>
                   </Field>
                 </div>
@@ -204,13 +204,13 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
                 <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
                   <Field>
                     <FieldLabel htmlFor="half_day_price">Half Day Price <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" name="half_day_price" autoComplete="off" placeholder="e.g. 300.00" value={halfDayPrice ?? ""} onChange={e => setHalfDayPrice(Number.parseInt(e.target.value))} required />
+                    <Input type="number" min={0} name="half_day_price" autoComplete="off" placeholder="e.g. 300.00" value={halfDayPrice ?? 0} onChange={e => setHalfDayPrice(Number.parseInt(e.target.value))} required />
                     <FieldDescription>Rate for up to 12 hours of use.</FieldDescription>
                   </Field>
 
                   <Field>
                     <FieldLabel htmlFor="hourly_price">Hourly Price <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" name="hourly_price" autoComplete="off" placeholder="e.g. 100.00" value={hourlyPrice ?? ""} onChange={e => setHourlyPrice(Number.parseInt(e.target.value))} required />
+                    <Input type="number" min={0} name="hourly_price" autoComplete="off" placeholder="e.g. 100.00" value={hourlyPrice ?? 0} onChange={e => setHourlyPrice(Number.parseInt(e.target.value))} required />
                     <FieldDescription>Rate charged per hour for quick rentals.</FieldDescription>
                   </Field>
                 </div>
