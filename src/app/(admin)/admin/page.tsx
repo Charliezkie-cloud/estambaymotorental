@@ -39,34 +39,34 @@ export default function AdminDashboardPage() {
         <section className="space-y-6 m-4 md:m-6">
           <h2 className="font-heading text-xl md:text-2xl font-bold">Dashboard</h2>
 
-          <AdminDashboardCards supabaseClient={supabaseClient} />
+          <AdminDashboardCards />
 
-          <AdminDashboardCharts supabaseClient={supabaseClient} />
+          <AdminDashboardCharts />
         </section>
 
         <section className="space-y-6 m-4 md:m-6">
           <h2 className="font-heading text-xl md:text-2xl font-bold">Recents</h2>
 
-          <div className="grid grid-cols-none grid-rows-2 md:grid-rows-none md:grid-cols-6 gap-6">
+          <div className="grid grid-cols-none grid-rows-2 md:grid-rows-none md:grid-cols-6 gap-6 overflow-x-auto">
             <div className="md:col-span-4 rounded-xl bg-card border border-border space-y-6">
               <div className="p-4 flex items-center">
-                <h2 className="font-heading text-lg md:text-xl font-bold">Recents Bookings</h2>
+                <h3 className="font-heading text-lg md:text-xl font-bold">Recents Bookings</h3>
                 <Link href="/admin/bookings" className="ms-auto underline underline-offset-8 text-sm">View All</Link>
               </div>
 
               <div className="px-4 pb-4">
-                <AdminRecentBookingsTable supabaseClient={supabaseClient} />
+                <AdminRecentBookingsTable />
               </div>
             </div>
 
             <div className="md:col-span-2 rounded-xl bg-card border border-border space-y-6">
               <div className="p-4 flex items-center">
-                <h2 className="font-heading text-lg md:text-xl font-bold">Recently Added Vehicles</h2>
+                <h3 className="font-heading text-lg md:text-xl font-bold">Recently Added Vehicles</h3>
                 <Link href="/admin/vehicles" className="ms-auto underline underline-offset-8 text-sm">View All</Link>
               </div>
 
               <div className="px-4 pb-4">
-                <AdminRecentVehiclesTable supabaseClient={supabaseClient} />
+                <AdminRecentVehiclesTable />
               </div>
             </div>
           </div>

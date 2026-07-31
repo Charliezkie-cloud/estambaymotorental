@@ -1,17 +1,12 @@
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "@/types/database.types";
 import { VehicleRow } from "@/types/models.types";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
 
-type Props = {
-  supabaseClient: SupabaseClient<Database>;
-};
-
-export default function AdminRecentVehiclesTable({ supabaseClient }: Props) {
+export default function AdminRecentVehiclesTable() {
   // States
   const [loading, setLoading] = useState(false);
   const [vehicleRows, setVehicleRows] = useState<VehicleRow[]>([]);
@@ -24,27 +19,12 @@ export default function AdminRecentVehiclesTable({ supabaseClient }: Props) {
       setLoading(true);
 
       try {
-        const { data, error } = await supabaseClient
-          .from("vehicles")
-          .select("*, vehicle_colors(name)")
-          .order("created_at", { ascending: false });
-
-        if (error)
-          return toast.error("Failed to Fetch Vehicles", { description: error.message });
-
-        const updatedVehicleRow: VehicleRow[] = data.map(e => {
-          const { data: publicUrlData } = supabaseClient
-            .storage
-            .from("vehicles")
-            .getPublicUrl (e.image);
-
-          return {
-            ...e,
-            imageUrl: publicUrlData.publicUrl
-          }
+        const data = await getAllVehicles(10);
+        setVehicleRows(data ?? []);
+      } catch (error) {
+        toast.error("Failed to Fetch Recently Added Vehicles", {
+          description: error instanceof Error ? error.message : String(error)
         });
-
-        setVehicleRows(updatedVehicleRow);
       } finally {
         setLoading(false);
       }

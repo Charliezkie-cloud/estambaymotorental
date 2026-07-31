@@ -1,19 +1,12 @@
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "@/types/database.types";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookingRow } from "@/types/models.types";
-import { SELECT_BOOKING_QUERY } from "@/lib/helpers/table-helpers";
 import { toast } from "sonner";
-import { getSignedUrl } from "@/lib/supabase/supabase-storage";
 import { Badge } from "@/components/ui/badge";
+import { getAllBookings } from "@/lib/supabase/tables/bookings-table";
 
-type Props = {
-  supabaseClient: SupabaseClient<Database>;
-};
-
-export default function AdminRecentBookingsTable({ supabaseClient }: Props) {
+export default function AdminRecentBookingsTable() {
   // States
   const [loading, setLoading] = useState(false);
   const [bookingsRow, setBookingsRow] = useState<BookingRow[]>([]);
@@ -27,33 +20,12 @@ export default function AdminRecentBookingsTable({ supabaseClient }: Props) {
       setLoading(true);
 
       try {
-        const { data, error } = await supabaseClient
-          .from("bookings")
-          .select(SELECT_BOOKING_QUERY)
-          .order("created_at", { ascending: false })
-          .limit(10);
-
-        if (error)
-          return toast.error("Failed to Fetch Bookings", { description: error.message });
-
-        const updatedBookings: BookingRow[] = await Promise.all(
-          data.map(async (e) => {
-            const [receiptImageUrl, driversLicenseImageUrl, validIdImageUrl] = await Promise.all([
-              getSignedUrl("receipts", e.payment_receipt_image),
-              getSignedUrl("drivers_license", e.drivers_license_image),
-              getSignedUrl("ids", e.valid_id_image)
-            ]);
-
-            return {
-              ...e,
-              receipt_image_url: typeof receiptImageUrl === "string" ? receiptImageUrl : "",
-              drivers_license_image_url: typeof driversLicenseImageUrl === "string" ? driversLicenseImageUrl : "",
-              valid_id_image_url: typeof validIdImageUrl === "string" ? validIdImageUrl : ""
-            };
-          })
-        );
-
-        setBookingsRow(updatedBookings);
+        const data = await getAllBookings(10);
+        setBookingsRow(data ?? []);
+      } catch (error) {
+        toast.error("Failed to Fetch Recent Bookings", {
+          description: error instanceof Error ? error.message : String(error)
+        });
       } finally {
         setLoading(false);
       }
@@ -61,7 +33,6 @@ export default function AdminRecentBookingsTable({ supabaseClient }: Props) {
 
     fetchBookings();
   }, []);
-
 
   return (
     <Table className="max-h-[750px]">

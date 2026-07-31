@@ -55,12 +55,24 @@ type UpdateBookingParameters = {
 };
 
 // Functions
-export async function getAllBookings(): Promise<BookingRow[] | null> {
+export async function getAllBookings(limit?: number): Promise<BookingRow[] | null> {
   try {
-    const { data } = await supabaseClient
-      .from("bookings")
-      .select("*, vehicles(model, vehicle_colors(name))")
-      .order("created_at", { ascending: false });
+    let data: BookingRow[] | null;
+
+    if (limit) {
+      const { data: responseData } = await supabaseClient
+        .from("bookings")
+        .select("*, vehicles(model, vehicle_colors(name))")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      data = responseData;
+    } else {
+      const { data: responseData } = await supabaseClient
+        .from("bookings")
+        .select("*, vehicles(model, vehicle_colors(name))")
+        .order("created_at", { ascending: false });
+      data = responseData;
+    }
 
     if (!data) return null;
 

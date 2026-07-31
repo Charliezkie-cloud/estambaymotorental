@@ -2,12 +2,6 @@ import { supabaseClient } from "@/lib/supabase/supabase-client";
 import { generateFileName } from "@/lib/generators/generators";
 import { ActualFileObject } from "filepond";
 
-// Bucket constants
-export const VEHICLES_BUCKET = "vehicles";
-export const IDS_BUCKET = "ids";
-export const DRIVERS_LICENSE_BUCKET = "drivers_license";
-export const RECEIPTS_BUCKET = "receipts";
-
 // Functions
 export async function uploadToBucket(bucket: string, file: ActualFileObject): Promise<string> {
   const newFileName = generateFileName(file);

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Database } from "@/types/database.types";
 import { MonthlyBookingsCountsViewItem, VehicleIncomesViewItem } from "@/types/models.types";
+import { getMonthlyBookingCounts, getVehiclesIncomes } from "@/lib/supabase/supabase-views";
 
 // Configs
 const incomeChartConfig = {
@@ -15,29 +16,24 @@ const monthlyBookingChartConfig = {
   total_bookings: { label: "Bookings", color: "#60a5fa" }
 } satisfies ChartConfig;
 
-// Types
-type Props = {
-  supabaseClient: SupabaseClient<Database>
-};
-
-export default function AdminDashboardCharts({ supabaseClient }: Props) {
+export default function AdminDashboardCharts() {
   // States
-  const [incomeData, setIncomeData] = useState<VehicleIncomesViewItem[]>([]);
+  const [vehiclesIncomeData, setVehiclesIncomeData] = useState<VehicleIncomesViewItem[]>([]);
   const [monthlyBookingData, setMonthlyBookingData] = useState<MonthlyBookingsCountsViewItem[]>([]);
 
   // Use effects
   useEffect(() => {
-    if (incomeData.length > 0) return;
+    if (vehiclesIncomeData.length > 0) return;
 
     async function fetchVehicleIncomes() {
-      const { data, error } = await supabaseClient
-        .from("vehicles_income")
-        .select("*")
-
-      if (error) return toast.error("Failed to Fetch Vehicles Income", { description: error.message });
-      if (!data) return;
-
-      setIncomeData(data);
+      try {
+        const data = await getVehiclesIncomes();
+        setVehiclesIncomeData(data ?? []);
+      } catch (error) {
+        toast.error("Failed to Fetch Vehicles Income", {
+          description: error instanceof Error ? error.message : String(error)
+        });
+      }
     }
 
     fetchVehicleIncomes();
@@ -47,14 +43,14 @@ export default function AdminDashboardCharts({ supabaseClient }: Props) {
     if (monthlyBookingData.length > 0) return;
 
     async function fetchMonthlyBookings() {
-      const { data, error } = await supabaseClient
-        .from("monthly_bookings_counts")
-        .select("*")
-
-      if (error) return toast.error("Failed to Fetch Monthly Booking Counts", { description: error.message });
-      if (!data) return;
-
-      setMonthlyBookingData(data);
+      try {
+        const data = await getMonthlyBookingCounts();
+        setMonthlyBookingData(data ?? []);
+      } catch (error) {
+        toast.error("Failed to Fetch Monthly Bookings Data", {
+          description: error instanceof Error ? error.message : String(error)
+        });
+      }
     }
 
     fetchMonthlyBookings();
@@ -67,7 +63,7 @@ export default function AdminDashboardCharts({ supabaseClient }: Props) {
           <h2 className="font-heading text-center text-lg md:text-xl font-bold">Income Per Vehicle</h2>
 
           <ChartContainer config={incomeChartConfig} className="w-full">
-            <BarChart data={incomeData} accessibilityLayer>
+            <BarChart data={vehiclesIncomeData} accessibilityLayer>
               <Bar dataKey="total" radius={4} fill="var(--color-model)">
                 <LabelList
                   position="top"

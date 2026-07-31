@@ -1,6 +1,6 @@
 import { supabaseClient } from "@/lib/supabase/supabase-client";
 import { ActualFileObject } from "filepond";
-import { deleteFromBucket, uploadToBucket, VEHICLES_BUCKET } from "@/lib/supabase/supabase-storage";
+import { deleteFromBucket, uploadToBucket } from "@/lib/supabase/supabase-storage";
 import { VehicleRow } from "@/types/models.types";
 
 // Types
@@ -29,28 +29,43 @@ type UpdateVehicleParameters = {
 };
 
 // Functions
-export async function getAllVehicles(): Promise<VehicleRow[] | null> {
-  const { data, error } = await supabaseClient
-    .from("vehicles")
-    .select("*, vehicle_colors(name)")
-    .order("created_at", { ascending: false });
+export async function getAllVehicles(limit?: number): Promise<VehicleRow[] | null> {
+  try {
+    let data: VehicleRow[] | null = null;
 
-  if (error) throw error;
-  if (!data) return null;
+    if (limit) {
+      const { data: responseData } = await supabaseClient
+        .from("vehicles")
+        .select("*, vehicle_colors(name)")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      data = responseData;
+    } else {
+      const { data: responseData } = await supabaseClient
+        .from("vehicles")
+        .select("*, vehicle_colors(name)")
+        .order("created_at", { ascending: false });
+      data = responseData;
+    }
 
-  return data.map(e => {
-    const { data: storageData } = supabaseClient
-      .storage
-      .from("vehicles")
-      .getPublicUrl(e.image)
+    if (!data) return null;
 
-    return { ...e, imageUrl: storageData.publicUrl };
-  });
+    return data.map(e => {
+      const { data: storageData } = supabaseClient
+        .storage
+        .from("vehicles")
+        .getPublicUrl(e.image)
+
+      return { ...e, imageUrl: storageData.publicUrl };
+    });
+  } catch (error) {
+    throw error;
+  }
 }
 
 export async function createVehicle({ model, year_model, daily_price, half_day_price, hourly_price, color, status, image }: CreateVehicleParameters): Promise<VehicleRow | null> {
   try {
-    const newFilename = await uploadToBucket(VEHICLES_BUCKET, image);
+    const newFilename = await uploadToBucket("vehicles", image);
     const { data } = await supabaseClient
       .from("vehicles")
       .insert({

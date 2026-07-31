@@ -61,7 +61,6 @@ export default function AdminVehiclePage() {
         <section className="space-y-6 m-4 md:m-6">
           <h2 className="font-heading text-xl md:text-2xl font-bold">Colors</h2>
           <AdminColorsTable
-            supabaseClient={supabaseClient}
             onVehicleColorsFetch={(e) => setVehicleColors(e)}
             onVehicleColorsDelete={e => setVehicleColors(e)}
             onVehicleColorsUpdate={e => setVehicleColors(e)}

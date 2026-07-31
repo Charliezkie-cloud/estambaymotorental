@@ -1,4 +1,3 @@
-import { SupabaseClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { MoreHorizontalIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -9,7 +8,6 @@ import { VehicleColorRow } from "@/types/models.types";
 import { Button } from "@/components/ui/button";
 import AdminDeleteColorDialog from "@/components/layouts/vehicle-colors-table/admin-delete-color-dialog";
 import AdminEditColorDialog from "@/components/layouts/vehicle-colors-table/admin-edit-color-dialog";
-import { Database } from "@/types/database.types";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -21,13 +19,12 @@ import {
 import { getAllVehicleColors } from "@/lib/supabase/tables/vehicle-colors-table";
 
 type Props = {
-  supabaseClient: SupabaseClient<Database>;
   onVehicleColorsFetch: (e: VehicleColorRow[]) => void;
   onVehicleColorsUpdate: (e: VehicleColorRow[]) => void;
   onVehicleColorsDelete: (e: VehicleColorRow[]) => void;
 };
 
-export default function AdminColorsTable({ supabaseClient, onVehicleColorsFetch, onVehicleColorsDelete, onVehicleColorsUpdate }: Props) {
+export default function AdminColorsTable({ onVehicleColorsFetch, onVehicleColorsDelete, onVehicleColorsUpdate }: Props) {
 
   // States
   const [vehicleColors, setVehicleColors] = useState<VehicleColorRow[]>([]);
@@ -80,7 +77,7 @@ export default function AdminColorsTable({ supabaseClient, onVehicleColorsFetch,
     }
 
     fetchVehicleColors();
-  }, [supabaseClient]);
+  }, []);
 
   return (
     <div className="space-y-3 bg-card border border-border p-4 rounded-xl">
