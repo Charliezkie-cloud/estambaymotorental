@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { registerPlugin } from "react-filepond";
 
 import AdminSidebar from "@/components/layouts/admin-sidebar";
-import { supabaseClient } from "@/lib/supabase-client";
+import { supabaseClient } from "@/lib/supabase/supabase-client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminVehiclesTable from "@/components/layouts/vehicles-table/admin-vehicles-table";
 import AdminResponsiveSidebarTrigger from "@/components/layouts/admin-responsive-sidebar-trigger";
@@ -55,16 +55,16 @@ export default function AdminVehiclePage() {
 
         <section className="space-y-6 m-4 md:m-6">
           <h2 className="font-heading text-xl md:text-2xl font-bold">Vehicles</h2>
-          <AdminVehiclesTable supabaseClient={supabaseClient}
-                              vehicleColors={vehicleColors} />
+          <AdminVehiclesTable vehicleColors={vehicleColors} />
         </section>
 
         <section className="space-y-6 m-4 md:m-6">
           <h2 className="font-heading text-xl md:text-2xl font-bold">Colors</h2>
-          <AdminColorsTable supabaseClient={supabaseClient}
-                            onVehicleColorsFetch={(e) => setVehicleColors(e)}
-                            onVehicleColorsDelete={e => setVehicleColors(e)}
-                            onVehicleColorsUpdate={e => setVehicleColors(e)}
+          <AdminColorsTable
+            supabaseClient={supabaseClient}
+            onVehicleColorsFetch={(e) => setVehicleColors(e)}
+            onVehicleColorsDelete={e => setVehicleColors(e)}
+            onVehicleColorsUpdate={e => setVehicleColors(e)}
           />
         </section>
 

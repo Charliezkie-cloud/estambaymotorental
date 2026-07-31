@@ -1,4 +1,3 @@
-import { SupabaseClient } from "@supabase/supabase-js";
 import { Loader2, PlusIcon } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "sonner";
@@ -8,13 +7,13 @@ import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { VehicleColorRow } from "@/types/models.types";
+import { createVehicleColor } from "@/lib/supabase/tables/vehicle-colors-table";
 
 type Props = {
-  supabaseClient: SupabaseClient;
-  onRowAdd?: (e: VehicleColorRow) => void;
+  onRowAdd: (e: VehicleColorRow | null) => void;
 };
 
-export default function AdminAddColorDialog({ supabaseClient, onRowAdd = () => { } }: Props) {
+export default function AdminAddColorDialog({ onRowAdd }: Props) {
   // States
   const [colorName, setColorName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,18 +30,14 @@ export default function AdminAddColorDialog({ supabaseClient, onRowAdd = () => {
     }
 
     try {
-      const { data, error } = await supabaseClient
-        .from("vehicle_colors")
-        .insert({ name: colorName })
-        .select("*")
-        .single();
-
-      if (error)
-        return toast.error("Failed to Add Vehicle Color", { description: error.message });
-
+      const data = await createVehicleColor(colorName);
       toast.success("Vehicle Color Added Successfully");
       setOpen(false);
       onRowAdd(data);
+    }  catch (error) {
+      toast.error("Failed to Add Vehicle Color", {
+        description: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setLoading(false);
     }

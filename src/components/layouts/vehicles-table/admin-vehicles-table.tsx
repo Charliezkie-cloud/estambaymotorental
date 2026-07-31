@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { MoreHorizontalIcon } from "lucide-react";
-import { SupabaseClient } from "@supabase/supabase-js";
 import Lightbox from "yet-another-react-lightbox";
 
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import AdminAddVehicleDialog from "@/components/layouts/vehicles-table/admin-add-vehicle-dialog";
 import { VehicleColorRow, VehicleRow } from "@/types/models.types";
-import { Database } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import AdminDeleteVehicleDialog from "@/components/layouts/vehicles-table/admin-delete-vehicle-dialog";
 import AdminEditVehicleDialog from "@/components/layouts/vehicles-table/admin-edit-vehicle-dialog";
@@ -20,13 +18,13 @@ import {
   DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
 
 type Props = {
-  supabaseClient: SupabaseClient<Database>;
   vehicleColors: VehicleColorRow[];
 };
 
-export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Props) {
+export default function AdminVehiclesTable({ vehicleColors }: Props) {
   // States
   const [vehicleRows, setVehicleRows] = useState<VehicleRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,31 +34,23 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | undefined>(undefined);
 
   // Handlers
-  function onRowAdd(row: VehicleRow) {
-    const { data } = supabaseClient
-      .storage
-      .from("vehicles")
-      .getPublicUrl(row.image);
-
-    setVehicleRows(prev => [...prev, { ...row, imageUrl: data.publicUrl }]);
+  function onRowAdd(row: VehicleRow | null) {
+    if (!row) return;
+    setVehicleRows(prev => [...prev, row]);
   }
 
-  function onRowDelete(row: VehicleRow) {
+  function onRowDelete(row: VehicleRow | null) {
     setDeleteRow(undefined);
+    if (!row) return;
     setVehicleRows(prev => prev.filter(e => e.id !== row.id));
   }
 
-  function onRowUpdate(row: VehicleRow) {
+  function onRowUpdate(row: VehicleRow | null) {
     setUpdateRow(undefined);
-
-    const { data } = supabaseClient
-      .storage
-      .from("vehicles")
-      .getPublicUrl(row.image);
-
+    if (!row) return;
     setVehicleRows(prev =>
       prev.map(e =>
-        e.id === row.id ? { ...row, imageUrl: data.publicUrl } : e
+        e.id === row.id ? row : e
       )
     );
   }
@@ -73,27 +63,12 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
       setLoading(true);
 
       try {
-        const { data, error } = await supabaseClient
-          .from("vehicles")
-          .select("*, vehicle_colors(name)")
-          .order("created_at", { ascending: false });
-
-        if (error)
-          return toast.error("Failed to Fetch Vehicles", { description: error.message });
-
-        const updatedVehicleRow: VehicleRow[] = data.map(e => {
-          const { data: publicUrlData } = supabaseClient
-            .storage
-            .from("vehicles")
-            .getPublicUrl (e.image);
-
-          return {
-            ...e,
-            imageUrl: publicUrlData.publicUrl
-          }
+        const data = await getAllVehicles();
+        setVehicleRows(data ?? []);
+      } catch (error) {
+        toast.error("Failed to Fetch Vehicles", {
+          description: error instanceof Error ? error.message : String(error)
         });
-
-        setVehicleRows(updatedVehicleRow);
       } finally {
         setLoading(false);
       }
@@ -104,27 +79,34 @@ export default function AdminVehiclesTable({ supabaseClient, vehicleColors }: Pr
 
   return (
     <div className="space-y-3 bg-card border border-border p-4 rounded-xl">
-      <AdminDeleteVehicleDialog supabaseClient={supabaseClient}
-                                row={deleteRow}
-                                onRowDelete={onRowDelete}
-                                onCancel={() => setDeleteRow(undefined)} />
-      <AdminEditVehicleDialog supabaseClient={supabaseClient}
-                              vehicleColors={vehicleColors}
-                              row={updateRow}
-                              onRowUpdate={onRowUpdate}
-                              onCancel={() => setUpdateRow(undefined)} />
-      <AdminDetailsVehicleDialog row={detailsRow}
-                                 onClose={() => setDetailsRow(undefined)} />
-      <Lightbox open={!!imagePreviewUrl}
-                close={() => setImagePreviewUrl(undefined)}
-                slides={[
-                  { src: imagePreviewUrl ?? "" }
-                ]} />
+      <AdminDeleteVehicleDialog
+        row={deleteRow}
+        onRowDelete={onRowDelete}
+        onCancel={() => setDeleteRow(undefined)}
+      />
+      <AdminEditVehicleDialog
+        vehicleColors={vehicleColors}
+        row={updateRow}
+        onRowUpdate={onRowUpdate}
+        onCancel={() => setUpdateRow(undefined)}
+      />
+      <AdminDetailsVehicleDialog
+        row={detailsRow}
+        onClose={() => setDetailsRow(undefined)}
+      />
+      <Lightbox
+        open={!!imagePreviewUrl}
+        close={() => setImagePreviewUrl(undefined)}
+        slides={[
+          { src: imagePreviewUrl ?? "" }
+        ]}
+      />
       
       <div className="flex">
-        <AdminAddVehicleDialog vehicleColors={vehicleColors}
-                               supabaseClient={supabaseClient}
-                               onRowAdd={onRowAdd} />
+        <AdminAddVehicleDialog
+          vehicleColors={vehicleColors}
+          onRowAdd={onRowAdd}
+        />
       </div>
 
       <Table className="max-h-[750px]">

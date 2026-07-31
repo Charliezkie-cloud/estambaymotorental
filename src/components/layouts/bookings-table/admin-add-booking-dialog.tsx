@@ -34,10 +34,10 @@ import "yet-another-react-lightbox/styles.css";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { MenuItem, paymentMethodMenuItems, paymentStatusMenuItems, bookingStatusMenuItems } from "@/lib/menu-items-data";
-import { DRIVERS_LICENSE_BUCKET, IDS_BUCKET, RECEIPTS_BUCKET, uploadToBucket } from "@/lib/storage-helpers";
-import { SELECT_BOOKING_QUERY } from "@/lib/table-helpers";
-import { getDaysBetween } from "@/lib/date-time-helpers";
+import { MenuItem, paymentMethodMenuItems, paymentStatusMenuItems, bookingStatusMenuItems } from "@/lib/data/menu-items-data";
+import { DRIVERS_LICENSE_BUCKET, IDS_BUCKET, RECEIPTS_BUCKET, uploadToBucket } from "@/lib/supabase/supabase-storage";
+import { SELECT_BOOKING_QUERY } from "@/lib/helpers/table-helpers";
+import { getDaysBetween } from "@/lib/helpers/date-time-helpers";
 
 type Props = {
   supabaseClient: SupabaseClient<Database>;

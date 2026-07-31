@@ -4,9 +4,9 @@ import { Database } from "@/types/database.types";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookingRow } from "@/types/models.types";
-import { SELECT_BOOKING_QUERY } from "@/lib/table-helpers";
+import { SELECT_BOOKING_QUERY } from "@/lib/helpers/table-helpers";
 import { toast } from "sonner";
-import { getSignedUrl } from "@/lib/storage-helpers";
+import { getSignedUrl } from "@/lib/supabase/supabase-storage";
 import { Badge } from "@/components/ui/badge";
 
 type Props = {

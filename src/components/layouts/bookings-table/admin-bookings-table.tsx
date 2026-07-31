@@ -19,8 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import AdminEditBookingDialog from "@/components/layouts/bookings-table/admin-edit-booking-dialog";
 import AdminDetailsBookingDialog from "@/components/layouts/bookings-table/admin-details-booking-dialog";
 import AdminDeleteBookingDialog from "@/components/layouts/bookings-table/admin-delete-booking-dialog";
-import { SELECT_BOOKING_QUERY, SELECT_VEHICLES_QUERY } from "@/lib/table-helpers";
-import { getSignedUrl } from "@/lib/storage-helpers";
+import { SELECT_BOOKING_QUERY, SELECT_VEHICLES_QUERY } from "@/lib/helpers/table-helpers";
+import { getSignedUrl } from "@/lib/supabase/supabase-storage";
 
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';

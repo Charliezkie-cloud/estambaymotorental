@@ -1,4 +1,3 @@
-import { SupabaseClient } from "@supabase/supabase-js";
 import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -8,16 +7,15 @@ import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogT
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Database } from "@/types/database.types";
+import { updateVehicleColor } from "@/lib/supabase/tables/vehicle-colors-table";
 
 type Props = {
   row?: VehicleColorRow;
-  supabaseClient: SupabaseClient<Database>;
-  onRowUpdate: (e: VehicleColorRow) => void;
+  onRowUpdate: (e: VehicleColorRow | null) => void;
   onCancel: () => void;
 };
 
-export default function AdminEditColorDialog({ row, supabaseClient, onRowUpdate, onCancel }: Props) {
+export default function AdminEditColorDialog({ row, onRowUpdate, onCancel }: Props) {
   // States
   const [colorName, setColorName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,18 +33,13 @@ export default function AdminEditColorDialog({ row, supabaseClient, onRowUpdate,
     }
 
     try {
-      const { data, error } = await supabaseClient
-        .from("vehicle_colors")
-        .update({ name: colorName })
-        .eq("id", row.id)
-        .select("*")
-        .single();
-
-      if (error)
-        return toast.error("Failed to Update Vehicle Color", { description: error.message });
-
+      const data = await updateVehicleColor(row.id, colorName);
       toast.success("Vehicle Color Updated Successfully");
       onRowUpdate(data);
+    } catch (error) {
+      toast.error("Failed to Update Vehicle Color", {
+        description: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setLoading(false);
     }

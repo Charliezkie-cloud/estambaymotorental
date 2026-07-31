@@ -18,6 +18,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { getAllVehicleColors } from "@/lib/supabase/tables/vehicle-colors-table";
 
 type Props = {
   supabaseClient: SupabaseClient<Database>;
@@ -35,18 +36,21 @@ export default function AdminColorsTable({ supabaseClient, onVehicleColorsFetch,
   const [updateRow, setUpdateRow] = useState<VehicleColorRow | undefined>(undefined);
 
   // Handlers
-  function onRowAdd(row: VehicleColorRow) {
+  function onRowAdd(row: VehicleColorRow | null) {
+    if (!row) return;
     setVehicleColors(prev => ([...prev, row]));
   }
 
-  function onRowDelete(row: VehicleColorRow) {
+  function onRowDelete(row: VehicleColorRow | null) {
     setDeleteRow(undefined);
+    if (!row) return;
     setVehicleColors(prev => prev.filter(e => e.id !== row.id));
     onVehicleColorsDelete(vehicleColors);
   }
 
-  function onRowUpdate(row: VehicleColorRow) {
+  function onRowUpdate(row: VehicleColorRow | null) {
     setUpdateRow(undefined);
+    if (!row) return;
     setVehicleColors(prev =>
       prev.map(e =>
         e.id === row.id ? row : e
@@ -63,17 +67,13 @@ export default function AdminColorsTable({ supabaseClient, onVehicleColorsFetch,
       setLoading(true);
 
       try {
-        const { data, error } = await supabaseClient
-          .from("vehicle_colors")
-          .select("*");
-
-        if (error)
-          return toast.error("Unable to Fetch Vehicle Colors", {
-            description: error.message
-          });
-
-        setVehicleColors(data);
-        onVehicleColorsFetch(data);
+        const data = await getAllVehicleColors();
+        setVehicleColors(data ?? []);
+        onVehicleColorsFetch(data ?? []);
+      } catch (error) {
+        toast.error("Failed to Fetch Vehicle Colors", {
+          description: error instanceof Error ? error.message : String(error)
+        });
       } finally {
         setLoading(false);
       }
@@ -84,18 +84,19 @@ export default function AdminColorsTable({ supabaseClient, onVehicleColorsFetch,
 
   return (
     <div className="space-y-3 bg-card border border-border p-4 rounded-xl">
-      <AdminDeleteColorDialog row={deleteRow}
-                              supabaseClient={supabaseClient}
-                              onRowDelete={onRowDelete}
-                              onCancel={() => setDeleteRow(undefined)} />
-      <AdminEditColorDialog row={updateRow}
-                            supabaseClient={supabaseClient}
-                            onRowUpdate={onRowUpdate}
-                            onCancel={() => setUpdateRow(undefined)} />
+      <AdminDeleteColorDialog
+        row={deleteRow}
+        onRowDelete={onRowDelete}
+        onCancel={() => setDeleteRow(undefined)}
+      />
+      <AdminEditColorDialog
+        row={updateRow}
+        onRowUpdate={onRowUpdate}
+        onCancel={() => setUpdateRow(undefined)}
+      />
 
       <div className="flex">
-        <AdminAddColorDialog supabaseClient={supabaseClient}
-                             onRowAdd={onRowAdd} />
+        <AdminAddColorDialog onRowAdd={onRowAdd} />
       </div>
 
       <Table className="max-h-[750px]">

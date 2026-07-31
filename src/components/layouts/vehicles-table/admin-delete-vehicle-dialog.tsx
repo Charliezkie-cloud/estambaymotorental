@@ -1,9 +1,7 @@
-import { SupabaseClient } from "@supabase/supabase-js";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-import { Database } from "@/types/database.types";
 import { VehicleRow } from "@/types/models.types";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -12,17 +10,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { deleteFromBucket, VEHICLES_BUCKET } from "@/lib/storage-helpers";
-import { SELECT_VEHICLES_QUERY } from "@/lib/table-helpers";
+import { deleteVehicle } from "@/lib/supabase/tables/vehicles-tables";
 
 type Props = {
-  supabaseClient: SupabaseClient<Database>;
   row?: VehicleRow;
-  onRowDelete: (e: VehicleRow) => void;
+  onRowDelete: (e: VehicleRow | null) => void;
   onCancel: () => void;
 };
 
-export default function AdminDeleteVehicleDialog({ supabaseClient, row, onRowDelete, onCancel }: Props) {
+export default function AdminDeleteVehicleDialog({ row, onRowDelete, onCancel }: Props) {
   // States
   const [loading, setLoading] = useState(false);
 
@@ -32,20 +28,13 @@ export default function AdminDeleteVehicleDialog({ supabaseClient, row, onRowDel
     setLoading(true);
 
     try {
-      const { data, error } = await supabaseClient
-        .from("vehicles")
-        .delete()
-        .eq("id", row.id)
-        .select(SELECT_VEHICLES_QUERY)
-        .single();
-
-      await deleteFromBucket(VEHICLES_BUCKET, [row.image]);
-
-      if (error)
-        return toast.error("Failed to Delete Vehicle", { description: error.message });
-
+      const data = await deleteVehicle(row.id);
       toast.success("Vehicle Deleted Successfully");
       onRowDelete(data);
+    } catch (error) {
+      toast.error("Failed to Delete Vehicle", {
+        description: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setLoading(false);
     }

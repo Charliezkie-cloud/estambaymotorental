@@ -1,25 +1,21 @@
 import { Loader2 } from "lucide-react";
 import { FilePond } from "react-filepond";
 import React, { useEffect, useState } from "react";
-import { SupabaseClient } from "@supabase/supabase-js";
 import { FilePondFile } from "filepond";
 import { toast } from "sonner";
 
-import { Database } from "@/types/database.types";
 import { VehicleColorRow, VehicleRow } from "@/types/models.types";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { deleteFromBucket, uploadToBucket, VEHICLES_BUCKET } from "@/lib/storage-helpers";
-import { SELECT_VEHICLES_QUERY } from "@/lib/table-helpers";
+import { updateVehicle } from "@/lib/supabase/tables/vehicles-tables";
 
 type Props = {
-  supabaseClient: SupabaseClient<Database>;
   vehicleColors: VehicleColorRow[]
   row?: VehicleRow;
-  onRowUpdate: (e: VehicleRow) => void;
+  onRowUpdate: (e: VehicleRow | null) => void;
   onCancel: () => void;
 };
 
@@ -28,7 +24,7 @@ type MenuItem = {
   label: string;
 };
 
-export default function AdminEditVehicleDialog({ supabaseClient, vehicleColors, row, onRowUpdate, onCancel }: Props) {
+export default function AdminEditVehicleDialog({ vehicleColors, row, onRowUpdate, onCancel }: Props) {
   // Menu items
   const [vehicleColorMenuItems, setVehicleColorMenuItems] = useState<MenuItem[]>([]);
   const statusMenuItems: MenuItem[] = [
@@ -61,35 +57,23 @@ export default function AdminEditVehicleDialog({ supabaseClient, vehicleColors, 
     }
 
     try {
-      let newImageFileName: string | null = null;
-      if (modelImage) {
-        const imageFile = modelImage[0].file;
-        await deleteFromBucket(VEHICLES_BUCKET, [row.image]);
-        newImageFileName = await uploadToBucket(VEHICLES_BUCKET, imageFile);
-      }
-
-      const { data, error } = await supabaseClient
-        .from("vehicles")
-        .update({
-          model: model ?? "",
-          color: color ?? -1,
-          year_model: yearModel ?? new Date().getFullYear(),
-          daily_price: dailyPrice ?? 0.00,
-          half_day_price: halfDayPrice ?? 0.00,
-          hourly_price: hourlyPrice ?? 0.00,
-          status: status ?? 1,
-          ...(newImageFileName && { image: newImageFileName })
-        })
-        .eq("id", row.id)
-        .select(SELECT_VEHICLES_QUERY)
-        .single();
-
-      if (error) return toast.error("Failed to Update Vehicle Row", { description: error.message });
+      const data = await updateVehicle({
+        id: row.id,
+        model: model ?? "",
+        color: color ?? -1,
+        year_model: yearModel ?? new Date().getFullYear(),
+        daily_price: dailyPrice ?? 0.00,
+        half_day_price: halfDayPrice ?? 0.00,
+        hourly_price: hourlyPrice ?? 0.00,
+        status: status ?? 1,
+        oldImage: row.image,
+          ...(modelImage && { newImage: modelImage[0].file })
+      });
 
       toast.success("Vehicle Updated Successfully");
       onRowUpdate(data);
     } catch (error) {
-      toast.error("Something went wrong while adding the vehicle", {
+      toast.error("Failed to Update Vehicle", {
         description: error instanceof Error ? error.message : String(error)
       });
     } finally {

@@ -1,20 +1,18 @@
 import { toast } from "sonner";
-import { SupabaseClient } from "@supabase/supabase-js"
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { VehicleColorRow } from "@/types/models.types";
-import { Database } from "@/types/database.types";
+import { deleteVehicleColor } from "@/lib/supabase/tables/vehicle-colors-table";
 
 type Props = {
   row?: VehicleColorRow;
-  supabaseClient: SupabaseClient<Database>;
-  onRowDelete: (e: VehicleColorRow) => void;
+  onRowDelete: (e: VehicleColorRow | null) => void;
   onCancel: () => void;
 };
 
-export default function AdminDeleteColorDialog({ row, supabaseClient, onRowDelete, onCancel }: Props) {
+export default function AdminDeleteColorDialog({ row, onRowDelete, onCancel }: Props) {
   // States
   const [loading, setLoading] = useState(false);
 
@@ -24,18 +22,13 @@ export default function AdminDeleteColorDialog({ row, supabaseClient, onRowDelet
     setLoading(true);
 
     try {
-      const { data, error } = await supabaseClient
-        .from("vehicle_colors")
-        .delete()
-        .eq("id", row.id)
-        .select()
-        .single();
-
-      if (error)
-        return toast.error("Failed to Delete Vehicle Color", { description: error.message });
-
+      const data = await deleteVehicleColor(row.id);
       toast.success("Vehicle Color Added Successfully");
       onRowDelete(data);
+    } catch (error) {
+      toast.error("Failed to Delete Vehicle Color", {
+        description: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setLoading(false);
     }

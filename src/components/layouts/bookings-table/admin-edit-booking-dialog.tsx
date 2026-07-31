@@ -39,10 +39,10 @@ import {
   IDS_BUCKET,
   RECEIPTS_BUCKET,
   uploadToBucket
-} from "@/lib/storage-helpers";
-import { getDaysBetween } from "@/lib/date-time-helpers";
-import { MenuItem, paymentStatusMenuItems, paymentMethodMenuItems, bookingStatusMenuItems } from "@/lib/menu-items-data";
-import { SELECT_BOOKING_QUERY } from "@/lib/table-helpers";
+} from "@/lib/supabase/supabase-storage";
+import { getDaysBetween } from "@/lib/helpers/date-time-helpers";
+import { MenuItem, paymentStatusMenuItems, paymentMethodMenuItems, bookingStatusMenuItems } from "@/lib/data/menu-items-data";
+import { SELECT_BOOKING_QUERY } from "@/lib/helpers/table-helpers";
 
 type Props = {
   row?: BookingRow;

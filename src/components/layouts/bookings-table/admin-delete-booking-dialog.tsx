@@ -13,8 +13,8 @@ import { BookingRow } from "@/types/models.types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database.types";
 import { toast } from "sonner";
-import { deleteFromBucket, DRIVERS_LICENSE_BUCKET, IDS_BUCKET, RECEIPTS_BUCKET } from "@/lib/storage-helpers";
-import { SELECT_BOOKING_QUERY } from "@/lib/table-helpers";
+import { deleteFromBucket, DRIVERS_LICENSE_BUCKET, IDS_BUCKET, RECEIPTS_BUCKET } from "@/lib/supabase/supabase-storage";
+import { SELECT_BOOKING_QUERY } from "@/lib/helpers/table-helpers";
 
 type Props = {
   row?: BookingRow;

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { redirect } from "next/navigation";
 
 import AdminSidebar from "@/components/layouts/admin-sidebar";
-import { supabaseClient } from "@/lib/supabase-client";
+import { supabaseClient } from "@/lib/supabase/supabase-client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminResponsiveSidebarTrigger from "@/components/layouts/admin-responsive-sidebar-trigger";
 import AdminDashboardCharts from "@/components/layouts/admin-dashboard/admin-dashboard-charts";

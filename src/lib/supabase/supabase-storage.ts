@@ -1,5 +1,5 @@
-import { supabaseClient } from "@/lib/supabase-client";
-import { generateFileName } from "@/lib/generators";
+import { supabaseClient } from "@/lib/supabase/supabase-client";
+import { generateFileName } from "@/lib/generators/generators";
 import { ActualFileObject } from "filepond";
 import { toast } from "sonner";
 

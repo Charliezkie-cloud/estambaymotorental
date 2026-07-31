@@ -2,7 +2,6 @@ import { Loader2, PlusIcon } from "lucide-react";
 import { FilePondFile } from "filepond";
 import React, { useEffect, useState } from "react";
 import { FilePond } from "react-filepond";
-import { SupabaseClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -10,15 +9,12 @@ import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { VehicleColorRow, VehicleRow } from "@/types/models.types";
-import { Database } from "@/types/database.types";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { uploadToBucket, VEHICLES_BUCKET } from "@/lib/storage-helpers";
-import { SELECT_VEHICLES_QUERY } from "@/lib/table-helpers";
+import { createVehicle } from "@/lib/supabase/tables/vehicles-tables";
 
 type Props = {
-  supabaseClient: SupabaseClient<Database>;
   vehicleColors: VehicleColorRow[];
-  onRowAdd: (e: VehicleRow) => void;
+  onRowAdd: (e: VehicleRow | null) => void;
 };
 
 type MenuItem = {
@@ -26,7 +22,7 @@ type MenuItem = {
   label: string;
 };
 
-export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, onRowAdd }: Props) {
+export default function AdminAddVehicleDialog({ vehicleColors, onRowAdd }: Props) {
   // Menu items
   const [vehicleColorMenuItems, setVehicleColorMenuItems] = useState<MenuItem[]>([]);
   const statusMenuItems: MenuItem[] = [
@@ -66,31 +62,21 @@ export default function AdminAddVehicleDialog({ supabaseClient, vehicleColors, o
 
     try {
       const imageFile = modelImage[0].file;
-      const newImageFileName = await uploadToBucket(VEHICLES_BUCKET, imageFile);
-
-      const { data, error } = await supabaseClient
-        .from("vehicles")
-        .insert({
-          model: model ?? "",
-          color: color ?? -1,
-          year_model: yearModel ?? new Date().getFullYear(),
-          daily_price: dailyPrice ?? 0.00,
-          half_day_price: halfDayPrice ?? 0.00,
-          hourly_price: hourlyPrice ?? 0.00,
-          image: newImageFileName,
-          status: status ?? 1
-        })
-        .select(SELECT_VEHICLES_QUERY)
-        .single();
-
-      if (error)
-        return toast.error("Failed to Add Vehicle", { description: error.message });
+      const data = await createVehicle({
+        model: model ?? "",
+        color: color ?? -1,
+        year_model: yearModel ?? new Date().getFullYear(),
+        daily_price: dailyPrice ?? 0.00,
+        half_day_price: halfDayPrice ?? 0.00,
+        hourly_price: hourlyPrice ?? 0.00,
+        image: imageFile
+      });
 
       toast.success("Vehicle Added Successfully");
       setOpen(false);
       onRowAdd(data);
     } catch (error) {
-      toast.error("Something went wrong while adding the vehicle", {
+      toast.error("Failed to Add Vehicle", {
         description: error instanceof Error ? error.message : String(error)
       });
     } finally {

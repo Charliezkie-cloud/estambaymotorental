@@ -1,7 +1,7 @@
 "use client";
 
 import AdminSidebar from "@/components/layouts/admin-sidebar";
-import { supabaseClient } from "@/lib/supabase-client";
+import { supabaseClient } from "@/lib/supabase/supabase-client";
 import AdminResponsiveSidebarTrigger from "@/components/layouts/admin-responsive-sidebar-trigger";
 import AdminBookingsTable from "@/components/layouts/bookings-table/admin-bookings-table";
 import { useEffect } from "react";
