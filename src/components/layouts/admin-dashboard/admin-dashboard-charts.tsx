@@ -1,9 +1,7 @@
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts";
-import { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Database } from "@/types/database.types";
 import { MonthlyBookingsCountsViewItem, VehicleIncomesViewItem } from "@/types/models.types";
 import { getMonthlyBookingCounts, getVehiclesIncomes } from "@/lib/supabase/supabase-views";
 
