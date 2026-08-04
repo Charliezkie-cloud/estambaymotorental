@@ -1,5 +1,5 @@
 import { Loader2, PlusIcon } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -42,6 +42,15 @@ export default function AdminAddColorDialog({ onRowAdd }: Props) {
       setLoading(false);
     }
   }
+
+  // Use effects
+  useEffect(() => {
+    function resetForm() {
+      setColorName("");
+    }
+
+    resetForm();
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

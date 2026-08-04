@@ -1,4 +1,4 @@
-import {
+import  {
   Dialog, DialogClose,
   DialogContent,
   DialogDescription, DialogFooter,
@@ -206,6 +206,29 @@ export default function AdminAddBookingDialog({ vehiclesRow, onRowAdd }: Props) 
     }
 
     fetchPaymentMethodItems();
+  }, []);
+
+  useEffect(() => {
+    function resetForm() {
+      setVehicle(null);
+      setRentalDate(undefined);
+      setRentalTime(undefined);
+      setReturnDate(undefined);
+      setReturnTime(undefined);
+      setFullName(undefined);
+      setPhoneNumber(undefined);
+      setFacebookAccount(undefined)
+      setPaymentMethod(null);
+      setPaymentReceipts(null);
+      setDriversLicense(null);
+      setValidId(null);
+      setIsDelivery(false);
+      setDeliveryAddress(undefined);
+      setDeliveryFee(undefined);
+      setPickupFee(undefined);
+    }
+
+    resetForm();
   }, []);
 
   return (

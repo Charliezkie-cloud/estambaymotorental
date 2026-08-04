@@ -109,6 +109,21 @@ export default function AdminAddVehicleDialog({ vehicleColors, onRowAdd }: Props
     mapVehicleColorsRow();
   }, [vehicleColors]);
 
+  useEffect(() => {
+    function resetForm() {
+      setStatus(1);
+      setModel(undefined);
+      setColor(null);
+      setYearModel(undefined);
+      setDailyPrice(undefined);
+      setHalfDayPrice(undefined);
+      setHourlyPrice(undefined);
+      setModelImage(null);
+    }
+
+    resetForm();
+  }, []);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger className="ms-auto">

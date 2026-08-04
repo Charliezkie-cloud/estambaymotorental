@@ -12,7 +12,7 @@ import { Loader2, PlusIcon } from "lucide-react";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FilePondFile } from "filepond";
 import { FilePond } from "react-filepond";
 import { toast } from "sonner";
@@ -67,6 +67,16 @@ export default function AdminAddPaymentMethodDialog({ onRowAdd }: Props) {
 
     return false;
   }
+
+  // Use effects
+  useEffect(() => {
+    function resetForm() {
+      setName(undefined);
+      setQrCodeImages(null);
+    }
+
+    resetForm();
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
