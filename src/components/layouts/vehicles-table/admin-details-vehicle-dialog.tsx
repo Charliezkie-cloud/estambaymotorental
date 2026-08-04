@@ -24,11 +24,11 @@ export default function AdminDetailsVehicleDialog({ row, onClose }: Props) {
   return (
     <>
       {imagePreview && (
-        <Lightbox open={!!imagePreview}
-                  close={() => setImagePreview(undefined)}
-                  slides={[
-                    { src: imagePreview }
-                  ]} />
+        <Lightbox
+          open={!!imagePreview}
+          close={() => setImagePreview(undefined)}
+          slides={[{ src: imagePreview }]}
+        />
       )}
 
       <Dialog open={!!row}>

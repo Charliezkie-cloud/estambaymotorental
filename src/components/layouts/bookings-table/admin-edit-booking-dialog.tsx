@@ -31,9 +31,10 @@ import React, { useEffect, useState } from "react";
 import { BookingRow, VehicleRow } from "@/types/models.types";
 import { FilePondFile } from "filepond";
 import { toast } from "sonner";
-import { getDaysBetween } from "@/lib/helpers/date-time-helpers";
-import { MenuItem, paymentStatusMenuItems, paymentMethodMenuItems, bookingStatusMenuItems } from "@/lib/data/menu-items-data";
+import { getDaysBetween } from "@/lib/helpers/datetime-helpers";
+import { MenuItem, paymentStatusMenuItems, bookingStatusMenuItems } from "@/lib/data/menu-items-data";
 import { updateBooking } from "@/lib/supabase/tables/bookings-table";
+import { getAllPaymentMethods } from "@/lib/supabase/tables/payment-methods-table";
 
 type Props = {
   row?: BookingRow;
@@ -45,6 +46,7 @@ type Props = {
 export default function AdminEditBookingDialog({ row, vehiclesRow, onRowUpdate, onCancel }: Props) {
   // Menu items
   const [vehicleMenuItems, setVehicleMenuItems] = useState<MenuItem[]>([]);
+  const [paymentMethodMenuItems, setPaymentMethodMenuItems] = useState<MenuItem[]>([]);
 
   // Form states
   const [vehicle, setVehicle] = useState<number | null>(null);
@@ -203,6 +205,19 @@ export default function AdminEditBookingDialog({ row, vehiclesRow, onRowUpdate, 
 
     mapFormStates();
   }, [row]);
+
+  useEffect(() => {
+    async function fetchPaymentMethodItems() {
+      const data = await getAllPaymentMethods();
+      if (!data) return;
+      setPaymentMethodMenuItems(data.map(e => ({
+        label: e.name,
+        value: e.name
+      })));
+    }
+
+    fetchPaymentMethodItems();
+  }, []);
 
   return (
     <Dialog open={!!row}>

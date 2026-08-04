@@ -1,6 +1,6 @@
 import { supabaseClient } from "@/lib/supabase/supabase-client";
 import { ActualFileObject } from "filepond";
-import { deleteFromBucket, uploadToBucket } from "@/lib/supabase/supabase-storage";
+import { deleteFromBucket, getPublicUrl, uploadToBucket } from "@/lib/supabase/supabase-storage";
 import { VehicleRow } from "@/types/models.types";
 
 // Types
@@ -51,12 +51,8 @@ export async function getAllVehicles(limit?: number): Promise<VehicleRow[] | nul
     if (!data) return null;
 
     return data.map(e => {
-      const { data: storageData } = supabaseClient
-        .storage
-        .from("vehicles")
-        .getPublicUrl(e.image)
-
-      return { ...e, imageUrl: storageData.publicUrl };
+      const publicUrl = getPublicUrl("vehicles", e.image)
+      return { ...e, imageUrl: publicUrl };
     });
   } catch (error) {
     throw error;
@@ -83,12 +79,8 @@ export async function createVehicle({ model, year_model, daily_price, half_day_p
 
     if (!data) return null;
 
-    const { data: storageData } = supabaseClient
-      .storage
-      .from("vehicles")
-      .getPublicUrl(data.image);
-
-    return { ...data, imageUrl: storageData.publicUrl };
+    const publicUrl = getPublicUrl("vehicles", data.image);
+    return { ...data, imageUrl: publicUrl };
   } catch (error) {
     throw error;
   }
@@ -121,12 +113,8 @@ export async function updateVehicle({ id, model, year_model, daily_price, half_d
 
     if (!data) return null;
 
-    const { data: storageData } = supabaseClient
-      .storage
-      .from("vehicles")
-      .getPublicUrl(data.image ?? "");
-
-    return { ...data, imageUrl: storageData.publicUrl };
+    const publicUrl = getPublicUrl("vehicles", data.image);
+    return { ...data, imageUrl: publicUrl };
   } catch (error) {
     throw error;
   }

@@ -1,13 +1,12 @@
 "use client";
 
+import { useAuth } from "@/hooks/useAuth";
 import AdminSidebar from "@/components/layouts/admin-sidebar";
 import { supabaseClient } from "@/lib/supabase/supabase-client";
-import AdminResponsiveSidebarTrigger from "@/components/layouts/admin-responsive-sidebar-trigger";
-import AdminBookingsTable from "@/components/layouts/bookings-table/admin-bookings-table";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
 import { redirect } from "next/navigation";
+import AdminPaymentMethodsTable from "@/components/layouts/payment-methods-table/admin-payment-methods-table";
 
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
@@ -25,7 +24,7 @@ registerPlugin(
   FilePondPluginFileValidateSize,
 );
 
-export default function AdminBookingsPage() {
+export default function AdminPaymentMethodsPage() {
   // Hooks
   const { loading, user, error } = useAuth();
 
@@ -45,11 +44,10 @@ export default function AdminBookingsPage() {
       <AdminSidebar supabaseClient={supabaseClient} />
 
       <main className="w-full">
-        <AdminResponsiveSidebarTrigger />
 
         <section className="space-y-6 m-4 md:m-6">
-          <h2 className="font-heading text-xl md:text-2xl font-bold">Bookings</h2>
-          <AdminBookingsTable />
+          <h2 className="font-heading text-xl md:text-2xl font-bold">Payment Methods</h2>
+          <AdminPaymentMethodsTable />
         </section>
 
       </main>

@@ -38,3 +38,12 @@ export async function getSignedUrl(bucket: string, filepath: string): Promise<st
 
   return data.signedUrl;
 }
+
+export function getPublicUrl(bucket: string, filepath: string): string {
+  const { data } = supabaseClient
+    .storage
+    .from(bucket)
+    .getPublicUrl(filepath);
+
+  return data.publicUrl;
+}

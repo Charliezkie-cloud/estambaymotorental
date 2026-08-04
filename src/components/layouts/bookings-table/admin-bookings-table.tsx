@@ -18,22 +18,8 @@ import AdminEditBookingDialog from "@/components/layouts/bookings-table/admin-ed
 import AdminDetailsBookingDialog from "@/components/layouts/bookings-table/admin-details-booking-dialog";
 import AdminDeleteBookingDialog from "@/components/layouts/bookings-table/admin-delete-booking-dialog";
 
-import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
-import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
-import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
-
-import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
-import "filepond/dist/filepond.min.css";
-import { registerPlugin } from "react-filepond";
 import { getAllBookings } from "@/lib/supabase/tables/bookings-table";
 import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
-
-// Register filepond plugins
-registerPlugin(
-  FilePondPluginImagePreview,
-  FilePondPluginFileValidateType,
-  FilePondPluginFileValidateSize,
-);
 
 export default function AdminBookingsTable() {
   // States

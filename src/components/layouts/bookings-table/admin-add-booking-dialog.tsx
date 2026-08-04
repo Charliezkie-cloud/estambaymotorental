@@ -28,14 +28,17 @@ import { FilePondFile } from "filepond";
 import { FilePond } from "react-filepond";
 import { motion, AnimatePresence } from "motion/react";
 
-import "yet-another-react-lightbox/styles.css";
-
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { MenuItem, paymentMethodMenuItems, paymentStatusMenuItems, bookingStatusMenuItems } from "@/lib/data/menu-items-data";
-import { getDaysBetween } from "@/lib/helpers/date-time-helpers";
+import {
+  MenuItem,
+  paymentStatusMenuItems,
+  bookingStatusMenuItems
+} from "@/lib/data/menu-items-data";
+import { getDaysBetween } from "@/lib/helpers/datetime-helpers";
 import { createBooking } from "@/lib/supabase/tables/bookings-table";
+import { getAllPaymentMethods } from "@/lib/supabase/tables/payment-methods-table";
 
 type Props = {
   vehiclesRow: VehicleRow[];
@@ -48,6 +51,7 @@ export default function AdminAddBookingDialog({ vehiclesRow, onRowAdd }: Props) 
 
   // Menu items
   const [vehicleMenuItems, setVehicleMenuItems] = useState<MenuItem[]>([]);
+  const [paymentMethodMenuItems, setPaymentMethodMenuItems] = useState<MenuItem[]>([]);
 
   // Form states
   const [vehicle, setVehicle] = useState<number | null>(null);
@@ -190,6 +194,19 @@ export default function AdminAddBookingDialog({ vehiclesRow, onRowAdd }: Props) 
 
     mapVehicleMenuItems();
   }, [vehiclesRow]);
+
+  useEffect(() => {
+    async function fetchPaymentMethodItems() {
+      const data = await getAllPaymentMethods();
+      if (!data) return;
+      setPaymentMethodMenuItems(data.map(e => ({
+        label: e.name,
+        value: e.name
+      })));
+    }
+
+    fetchPaymentMethodItems();
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
