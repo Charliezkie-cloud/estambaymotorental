@@ -18,7 +18,7 @@ import AdminEditBookingDialog from "@/components/layouts/bookings-table/admin-ed
 import AdminDetailsBookingDialog from "@/components/layouts/bookings-table/admin-details-booking-dialog";
 import AdminDeleteBookingDialog from "@/components/layouts/bookings-table/admin-delete-booking-dialog";
 
-import { getAllBookings } from "@/lib/supabase/tables/bookings-table";
+import { getAllBookings, updateBookingStatus } from "@/lib/supabase/tables/bookings-table";
 import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
 
 export default function AdminBookingsTable() {
@@ -46,6 +46,18 @@ export default function AdminBookingsTable() {
     setDeleteBookingRow(undefined);
     if (!row) return;
     setBookingsRow(prev => prev.filter(e => e.id !== row.id));
+  }
+
+  async function onRowBookingStatusUpdate(status: number, id: number, isPayment: boolean = false) {
+    try {
+      const data = await updateBookingStatus(id, status, isPayment);
+      if (!data) return;
+      setBookingsRow(prev => prev.map(e => e.id === data.id ? data : e));
+    } catch (error) {
+      toast.error("Failed to Update Booking Status", {
+        description: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 
   // Use effects
@@ -116,6 +128,7 @@ export default function AdminBookingsTable() {
             <TableHead>Booked At</TableHead>
             <TableHead>Full Name</TableHead>
             <TableHead>Vehicle</TableHead>
+            <TableHead>Color</TableHead>
             <TableHead>Amount</TableHead>
             <TableHead>Payment Status</TableHead>
             <TableHead>Booking Status</TableHead>
@@ -152,6 +165,7 @@ export default function AdminBookingsTable() {
                 <TableCell>{formattedCreatedAt}</TableCell>
                 <TableCell>{item.full_name}</TableCell>
                 <TableCell>{item.vehicles?.model}</TableCell>
+                <TableCell>{item.vehicles?.vehicle_colors?.name}</TableCell>
                 <TableCell>{item.amount.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</TableCell>
                 <TableCell>
                   {item.payment_status === 1 && (<Badge>Paid</Badge>)}
@@ -174,6 +188,25 @@ export default function AdminBookingsTable() {
                         <DropdownMenuItem onClick={() => setDetailsBookingRow(item)}>Details</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setUpdateBookingRow(item)}>Edit</DropdownMenuItem>
                       </DropdownMenuGroup>
+
+                      <DropdownMenuSeparator />
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel>Booking Status</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(1, item.id)}>Completed</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(2, item.id)}>Change Unit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(3, item.id)}>Reserved</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(4, item.id)}>Rescheduled</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(5, item.id)}>Cancelled</DropdownMenuItem>
+                      </DropdownMenuGroup>
+
+                      <DropdownMenuSeparator />
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel>Payment Status</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(1, item.id, true)}>Paid</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(2, item.id, true)}>Partially Paid</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(3, item.id, true)}>Pending</DropdownMenuItem>
+                      </DropdownMenuGroup>
+
                       <DropdownMenuSeparator />
                       <DropdownMenuGroup>
                         <DropdownMenuItem variant="destructive" onClick={() => setDeleteBookingRow(item)}>Delete</DropdownMenuItem>

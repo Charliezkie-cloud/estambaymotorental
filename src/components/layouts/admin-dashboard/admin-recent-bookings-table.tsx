@@ -43,6 +43,7 @@ export default function AdminRecentBookingsTable() {
           <TableHead>Booked At</TableHead>
           <TableHead>Full Name</TableHead>
           <TableHead>Vehicle</TableHead>
+          <TableHead>Color</TableHead>
           <TableHead>Amount</TableHead>
           <TableHead>Payment Status</TableHead>
           <TableHead>Booking Status</TableHead>
@@ -78,6 +79,7 @@ export default function AdminRecentBookingsTable() {
               <TableCell>{formattedCreatedAt}</TableCell>
               <TableCell>{item.full_name}</TableCell>
               <TableCell>{item.vehicles?.model}</TableCell>
+              <TableCell>{item.vehicles?.vehicle_colors?.name}</TableCell>
               <TableCell>{item.amount.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</TableCell>
               <TableCell>
                 {item.payment_status === 1 && (<Badge>Paid</Badge>)}

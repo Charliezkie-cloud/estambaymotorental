@@ -97,6 +97,47 @@ export async function getAllBookings(limit?: number): Promise<BookingRow[] | nul
   }
 }
 
+export async function updateBookingStatus(id: number, status: number, isPayment?: boolean): Promise<BookingRow | null> {
+  try {
+    let data: BookingRow | null = null;
+
+    if (isPayment) {
+      const { data: responseData } = await supabaseClient
+        .from("bookings")
+        .update({ payment_status: status })
+        .eq("id", id)
+        .select("*, vehicles(model, vehicle_colors(name))")
+        .single();
+      data = responseData;
+    } else {
+      const { data: responseData } = await supabaseClient
+        .from("bookings")
+        .update({ booking_status: status })
+        .eq("id", id)
+        .select("*, vehicles(model, vehicle_colors(name))")
+        .single();
+      data = responseData;
+    }
+
+    if (!data) return null;
+
+    const [paymentReceiptImageUrl, driversLicenseImageUrl, validIdImageUrl] = await Promise.all([
+      await getSignedUrl("receipts", data.payment_receipt_image),
+      await getSignedUrl("drivers_license", data.drivers_license_image),
+      await getSignedUrl("ids", data.valid_id_image),
+    ]);
+
+    return {
+      ...data,
+      receipt_image_url: paymentReceiptImageUrl,
+      drivers_license_image_url: driversLicenseImageUrl,
+      valid_id_image_url: validIdImageUrl,
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
 export async function createBooking({
                                       vehicle_id,
                                       number_of_days_rent,
