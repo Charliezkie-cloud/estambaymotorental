@@ -20,6 +20,7 @@ import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import "filepond/dist/filepond.min.css";
 import "yet-another-react-lightbox/styles.css";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
 
 // Register filepond plugins
 registerPlugin(
@@ -55,11 +56,21 @@ export default function AdminVehiclePage() {
 
         <section className="space-y-6 m-4 md:m-6">
           <h2 className="font-heading text-xl md:text-2xl font-bold">Vehicles</h2>
+          <Bubble variant="secondary">
+            <BubbleContent>
+              To keep your data accurate, vehicles with booking history cannot be deleted. You can edit the existing vehicle details instead.
+            </BubbleContent>
+          </Bubble>
           <AdminVehiclesTable vehicleColors={vehicleColors} />
         </section>
 
         <section className="space-y-6 m-4 md:m-6">
           <h2 className="font-heading text-xl md:text-2xl font-bold">Colors</h2>
+          <Bubble variant="secondary">
+            <BubbleContent>
+              To keep your data accurate and organized, colors with existing vehicles cannot be deleted. You can edit the existing color details instead.
+            </BubbleContent>
+          </Bubble>
           <AdminColorsTable
             onVehicleColorsFetch={(e) => setVehicleColors(e)}
             onVehicleColorsDelete={e => setVehicleColors(e)}

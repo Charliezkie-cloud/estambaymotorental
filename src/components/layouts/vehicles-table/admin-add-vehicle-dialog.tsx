@@ -111,6 +111,8 @@ export default function AdminAddVehicleDialog({ vehicleColors, onRowAdd }: Props
 
   useEffect(() => {
     function resetForm() {
+      if (!open) return;
+
       setStatus(1);
       setModel(undefined);
       setColor(null);
@@ -122,7 +124,7 @@ export default function AdminAddVehicleDialog({ vehicleColors, onRowAdd }: Props
     }
 
     resetForm();
-  }, []);
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

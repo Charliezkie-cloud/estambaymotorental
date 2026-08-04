@@ -16,6 +16,7 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import "filepond/dist/filepond.min.css";
 import "yet-another-react-lightbox/styles.css";
 import { registerPlugin } from "react-filepond";
+import AdminResponsiveSidebarTrigger from "@/components/layouts/admin-responsive-sidebar-trigger";
 
 // Register filepond plugins
 registerPlugin(
@@ -44,6 +45,7 @@ export default function AdminPaymentMethodsPage() {
       <AdminSidebar supabaseClient={supabaseClient} />
 
       <main className="w-full">
+        <AdminResponsiveSidebarTrigger />
 
         <section className="space-y-6 m-4 md:m-6">
           <h2 className="font-heading text-xl md:text-2xl font-bold">Payment Methods</h2>

@@ -84,6 +84,7 @@ export default function AdminBookingsTable() {
   return (
     <div className="space-y-3 bg-card border border-border p-4 rounded-xl">
       <AdminEditBookingDialog
+        bookingsRow={bookingsRow}
         vehiclesRow={vehiclesRow}
         row={updateBookingRow}
         onRowUpdate={onRowUpdate}
@@ -101,6 +102,7 @@ export default function AdminBookingsTable() {
 
       <div className="flex">
         <AdminAddBookingDialog
+          bookingsRow={bookingsRow}
           vehiclesRow={vehiclesRow}
           onRowAdd={onRowAdd}
         />

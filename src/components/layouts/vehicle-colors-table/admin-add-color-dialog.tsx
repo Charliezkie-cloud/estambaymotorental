@@ -46,11 +46,13 @@ export default function AdminAddColorDialog({ onRowAdd }: Props) {
   // Use effects
   useEffect(() => {
     function resetForm() {
+      if (!open) return;
+
       setColorName("");
     }
 
     resetForm();
-  }, []);
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

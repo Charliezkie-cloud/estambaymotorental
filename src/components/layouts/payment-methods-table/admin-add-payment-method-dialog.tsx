@@ -71,12 +71,14 @@ export default function AdminAddPaymentMethodDialog({ onRowAdd }: Props) {
   // Use effects
   useEffect(() => {
     function resetForm() {
+      if (!open) return;
+
       setName(undefined);
       setQrCodeImages(null);
     }
 
     resetForm();
-  }, []);
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
