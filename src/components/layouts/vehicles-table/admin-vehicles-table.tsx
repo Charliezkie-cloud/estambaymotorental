@@ -150,11 +150,8 @@ export default function AdminVehiclesTable({ vehicleColors }: Props) {
                 <TableCell>{item.model}</TableCell>
                 <TableCell>{item.vehicle_colors?.name}</TableCell>
                 <TableCell>
-                  {item.status === 1 ? (
-                    <Badge variant="secondary">Available</Badge>
-                  ) : (
-                    <Badge variant="destructive">Under Maintenance</Badge>
-                  )}
+                  {item.status === 1 && (<Badge>Available</Badge>)}
+                  {item.status === 2 && (<Badge variant="destructive">Under Maintenance</Badge>)}
                 </TableCell>
                 <TableCell className="text-end">
                   <DropdownMenu>

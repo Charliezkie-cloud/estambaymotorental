@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Inter, Roboto } from "next/font/google";
 import "../globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "next-themes";
+import Navbar from "@/components/layouts/navbar";
 
 const robotoHeading = Roboto({subsets:['latin'],variable:'--font-heading'});
 
@@ -30,11 +31,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable, robotoHeading.variable)}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-[#051424]/80">
         <ThemeProvider attribute="class"
                        defaultTheme="dark"
                        enableSystem
                        disableTransitionOnChange>
+          <header>
+            <Navbar />
+          </header>
           {children}
         </ThemeProvider>
       </body>
