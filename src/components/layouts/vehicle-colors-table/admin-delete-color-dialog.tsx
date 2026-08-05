@@ -23,7 +23,7 @@ export default function AdminDeleteColorDialog({ row, onRowDelete, onCancel }: P
 
     try {
       const data = await deleteVehicleColor(row.id);
-      toast.success("Vehicle Color Added Successfully");
+      toast.success("Vehicle Color Deleted Successfully");
       onRowDelete(data);
     } catch (error) {
       toast.error("Failed to Delete Vehicle Color", {

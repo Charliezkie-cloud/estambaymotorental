@@ -28,20 +28,20 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect, useState } from "react";
-import { BookingRow, VehicleRow } from "@/types/models.types";
+import { BookingRow, PaymentMethodRow, VehicleRow } from "@/types/models.types";
 import { FilePondFile } from "filepond";
 import { toast } from "sonner";
 import { getCurrentTimeString, getDaysBetween } from "@/lib/helpers/datetime-helpers";
 import { MenuItem, paymentStatusMenuItems, bookingStatusMenuItems } from "@/lib/data/menu-items-data";
 import { updateBooking } from "@/lib/supabase/tables/bookings-table";
-import { getAllPaymentMethods } from "@/lib/supabase/tables/payment-methods-table";
 import Lightbox from "yet-another-react-lightbox";
 import Image from "next/image";
 
 type Props = {
   row?: BookingRow;
-  bookingsRow: BookingRow[]
+  bookingsRow: BookingRow[];
   vehiclesRow: VehicleRow[];
+  paymentMethodRows: PaymentMethodRow[];
   onRowUpdate: (e: BookingRow | null) => void;
   onCancel: () => void;
 };
@@ -51,7 +51,7 @@ type DisabledRangeItem = {
   to: Date;
 };
 
-export default function AdminEditBookingDialog({ row, bookingsRow, vehiclesRow, onRowUpdate, onCancel }: Props) {
+export default function AdminEditBookingDialog({ row, bookingsRow, vehiclesRow, paymentMethodRows, onRowUpdate, onCancel }: Props) {
   // States
   const [imagePreview, setImagePreview] = useState<string | undefined>(undefined);
   const [bookedDates, setBookedDates] = useState<DisabledRangeItem[]>([]);
@@ -72,7 +72,7 @@ export default function AdminEditBookingDialog({ row, bookingsRow, vehiclesRow, 
   const [fullName, setFullName] = useState<string | undefined>(undefined);
   const [phoneNumber, setPhoneNumber] = useState<string | undefined>(undefined);
   const [facebookAccount, setFacebookAccount] = useState<string | undefined>(undefined);
-  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<number | null>(null);
   const [paymentReceipts, setPaymentReceipts] = useState<FilePondFile[] | null>(null);
   const [driversLicense, setDriversLicense] = useState<FilePondFile[] | null>(null);
   const [validId, setValidId] = useState<FilePondFile[] | null>(null);
@@ -126,7 +126,7 @@ export default function AdminEditBookingDialog({ row, bookingsRow, vehiclesRow, 
         full_name: fullName ?? "",
         phone_number: phoneNumber ?? "",
         facebook_account: facebookAccount ?? "",
-        payment_method: paymentMethod ?? "",
+        payment_method_id: paymentMethod ?? -1,
         oldPaymentReceiptImageFilename: row.payment_receipt_image,
         oldDriversLicenseImageFilename: row.drivers_license_image,
         oldValidIdImageFilename: row.valid_id_image,
@@ -193,6 +193,17 @@ export default function AdminEditBookingDialog({ row, bookingsRow, vehiclesRow, 
   }, [vehiclesRow]);
 
   useEffect(() => {
+    async function mapPaymentMethodsMenuItems() {
+      const mappedPaymentMethodsMenuItems: MenuItem[] = paymentMethodRows.map(e => ({
+        value: e.id, label: e.name
+      }));
+      setPaymentMethodMenuItems(mappedPaymentMethodsMenuItems);
+    }
+
+    mapPaymentMethodsMenuItems();
+  }, [paymentMethodRows]);
+
+  useEffect(() => {
     function mapFormStates() {
       if (!row) return;
 
@@ -206,7 +217,7 @@ export default function AdminEditBookingDialog({ row, bookingsRow, vehiclesRow, 
       setFullName(row.full_name);
       setPhoneNumber(row.phone_number);
       setFacebookAccount(row.facebook_account);
-      setPaymentMethod(row.payment_method);
+      setPaymentMethod(row.payment_method_id);
 
       setIsDelivery(!!row.is_delivery);
       setDeliveryAddress(row.address_for_delivery);
@@ -219,19 +230,6 @@ export default function AdminEditBookingDialog({ row, bookingsRow, vehiclesRow, 
 
     mapFormStates();
   }, [row]);
-
-  useEffect(() => {
-    async function fetchPaymentMethodItems() {
-      const data = await getAllPaymentMethods();
-      if (!data) return;
-      setPaymentMethodMenuItems(data.map(e => ({
-        label: e.name,
-        value: e.name
-      })));
-    }
-
-    fetchPaymentMethodItems();
-  }, []);
 
   useEffect(() => {
     function getBookedDates() {

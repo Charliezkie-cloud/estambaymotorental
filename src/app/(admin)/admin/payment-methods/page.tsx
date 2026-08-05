@@ -17,6 +17,7 @@ import "filepond/dist/filepond.min.css";
 import "yet-another-react-lightbox/styles.css";
 import { registerPlugin } from "react-filepond";
 import AdminResponsiveSidebarTrigger from "@/components/layouts/admin-responsive-sidebar-trigger";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
 
 // Register filepond plugins
 registerPlugin(
@@ -49,6 +50,11 @@ export default function AdminPaymentMethodsPage() {
 
         <section className="space-y-6 m-4 md:m-6">
           <h2 className="font-heading text-xl md:text-2xl font-bold">Payment Methods</h2>
+          <Bubble variant="tinted">
+            <BubbleContent>
+              To keep your data accurate, payment methods with booking history cannot be deleted. You can edit the existing payment method details instead.
+            </BubbleContent>
+          </Bubble>
           <AdminPaymentMethodsTable />
         </section>
 

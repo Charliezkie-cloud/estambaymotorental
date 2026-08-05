@@ -13,6 +13,9 @@ export type BookingRow = Database["public"]["Tables"]["bookings"]["Row"] & {
       name: string;
     }
   }
+  payment_methods?: {
+    name: string;
+  }
   receipt_image_url?: string;
   drivers_license_image_url?: string;
   valid_id_image_url?: string;
@@ -24,3 +27,4 @@ export type PaymentMethodRow = Database["public"]["Tables"]["payment_methods"]["
 // Views
 export type MonthlyBookingsCountsViewItem = Database["public"]["Views"]["monthly_bookings_counts"]["Row"];
 export type VehicleIncomesViewItem = Database["public"]["Views"]["vehicles_income"]["Row"];
+  

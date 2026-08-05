@@ -2,7 +2,7 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminAddBookingDialog from "@/components/layouts/bookings-table/admin-add-booking-dialog";
-import { BookingRow, VehicleRow } from "@/types/models.types";
+import { BookingRow, PaymentMethodRow, VehicleRow } from "@/types/models.types";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -20,11 +20,13 @@ import AdminDeleteBookingDialog from "@/components/layouts/bookings-table/admin-
 
 import { getAllBookings, updateBookingStatus } from "@/lib/supabase/tables/bookings-table";
 import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
+import { getAllPaymentMethods } from "@/lib/supabase/tables/payment-methods-table";
 
 export default function AdminBookingsTable() {
   // States
   const [vehiclesRow, setVehiclesRow] = useState<VehicleRow[]>([]);
   const [bookingsRow, setBookingsRow] = useState<BookingRow[]>([]);
+  const [paymentMethodRows, setPaymentMethodRows] = useState<PaymentMethodRow[]>([]);
   const [updateBookingRow, setUpdateBookingRow] = useState<BookingRow | undefined>(undefined);
   const [detailsBookingRow, setDetailsBookingRow] = useState<BookingRow | undefined>(undefined);
   const [deleteBookingRow, setDeleteBookingRow] = useState<BookingRow | undefined>(undefined);
@@ -93,9 +95,27 @@ export default function AdminBookingsTable() {
     fetchBookings();
   }, []);
 
+  useEffect(() => {
+    if (paymentMethodRows.length > 0) return;
+
+    async function fetchPaymentMethods() {
+      try {
+        const data = await getAllPaymentMethods();
+        setPaymentMethodRows(data ?? []);
+      } catch (error) {
+        toast.error("Failed to Fetch Payment Methods", {
+          description: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+    fetchPaymentMethods();
+  }, []);
+
   return (
     <div className="space-y-3 bg-card border border-border p-4 rounded-xl">
       <AdminEditBookingDialog
+        paymentMethodRows={paymentMethodRows}
         bookingsRow={bookingsRow}
         vehiclesRow={vehiclesRow}
         row={updateBookingRow}
@@ -114,6 +134,7 @@ export default function AdminBookingsTable() {
 
       <div className="flex">
         <AdminAddBookingDialog
+          paymentMethodRows={paymentMethodRows}
           bookingsRow={bookingsRow}
           vehiclesRow={vehiclesRow}
           onRowAdd={onRowAdd}
@@ -173,10 +194,18 @@ export default function AdminBookingsTable() {
                   {item.payment_status === 3 && (<Badge variant="outline">Pending</Badge>)}
                 </TableCell>
                 <TableCell>
+                  {/*Primary YAY ;D*/}
                   {item.booking_status === 1 && (<Badge>Completed</Badge>)}
-                  {item.booking_status === 2 && (<Badge variant="outline">Change Unit</Badge>)}
+
+                  {/*Secondary*/}
                   {item.booking_status === 3 && (<Badge variant="secondary">Reserved</Badge>)}
+                  {item.booking_status === 6 && (<Badge variant="secondary">On-Going</Badge>)}
+
+                  {/*Outline*/}
+                  {item.booking_status === 2 && (<Badge variant="outline">Change Unit</Badge>)}
                   {item.booking_status === 4 && (<Badge variant="outline">Rescheduled</Badge>)}
+
+                  {/*Danger*/}
                   {item.booking_status === 5 && (<Badge variant="destructive">Cancelled</Badge>)}
                 </TableCell>
                 <TableCell className="text-end">
@@ -193,8 +222,10 @@ export default function AdminBookingsTable() {
                       <DropdownMenuGroup>
                         <DropdownMenuLabel>Booking Status</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(1, item.id)}>Completed</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(2, item.id)}>Change Unit</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(3, item.id)}>Reserved</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(6, item.id)}>On-Going</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(2, item.id)}>Change Unit</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(4, item.id)}>Rescheduled</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onRowBookingStatusUpdate(5, item.id)}>Cancelled</DropdownMenuItem>
                       </DropdownMenuGroup>

@@ -53,6 +53,7 @@ export async function getOverallIncome(): Promise<number | null> {
   const { data, error } = await supabaseClient
     .from("bookings")
     .select("amount")
+    .eq("payment_status", 1)
 
   if (error) throw error;
   if (!data) return null;

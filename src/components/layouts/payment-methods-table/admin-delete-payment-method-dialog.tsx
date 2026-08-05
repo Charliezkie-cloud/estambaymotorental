@@ -31,6 +31,7 @@ export default function AdminDeletePaymentMethodDialog({ row, onRowDelete, onCan
 
     try {
       const data = await deletePaymentMethod(row.id);
+      toast.success("Payment Method Deleted Successfully");
       onRowDelete(data);
     } catch (error) {
       toast.error("Failed to Delete Payment Method", {

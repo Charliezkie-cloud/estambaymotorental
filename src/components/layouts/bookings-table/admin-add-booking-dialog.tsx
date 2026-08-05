@@ -17,7 +17,7 @@ import {
   FieldSeparator,
   FieldSet
 } from "@/components/ui/field";
-import { BookingRow, VehicleRow } from "@/types/models.types";
+import { BookingRow, PaymentMethodRow, VehicleRow } from "@/types/models.types";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -38,13 +38,13 @@ import {
 } from "@/lib/data/menu-items-data";
 import { getCurrentTimeString, getDaysBetween } from "@/lib/helpers/datetime-helpers";
 import { createBooking } from "@/lib/supabase/tables/bookings-table";
-import { getAllPaymentMethods } from "@/lib/supabase/tables/payment-methods-table";
 import Image from "next/image";
 import Lightbox from "yet-another-react-lightbox";
 
 type Props = {
   bookingsRow: BookingRow[];
   vehiclesRow: VehicleRow[];
+  paymentMethodRows: PaymentMethodRow[];
   onRowAdd: (e: BookingRow | null) => void;
 };
 
@@ -53,7 +53,7 @@ type DisabledRangeItem = {
   to: Date;
 };
 
-export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, onRowAdd }: Props) {
+export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, paymentMethodRows, onRowAdd }: Props) {
   // States
   const [open, setOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | undefined>(undefined);
@@ -75,7 +75,7 @@ export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, onRowA
   const [fullName, setFullName] = useState<string | undefined>(undefined);
   const [phoneNumber, setPhoneNumber] = useState<string | undefined>(undefined);
   const [facebookAccount, setFacebookAccount] = useState<string | undefined>(undefined);
-  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<number | null>(null);
   const [paymentReceipts, setPaymentReceipts] = useState<FilePondFile[] | null>(null);
   const [driversLicense, setDriversLicense] = useState<FilePondFile[] | null>(null);
   const [validId, setValidId] = useState<FilePondFile[] | null>(null);
@@ -139,7 +139,7 @@ export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, onRowA
         full_name: fullName ?? "",
         phone_number: phoneNumber ?? "",
         facebook_account: facebookAccount ?? "",
-        payment_method: paymentMethod ?? "",
+        payment_method_id: paymentMethod ?? -1,
         paymentReceiptImageFile: paymentReceipts[0].file,
         driversLicenseImageFile: driversLicense[0].file,
         validIdImageFile: validId[0].file,
@@ -177,7 +177,7 @@ export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, onRowA
     if (fullName && fullName.trim().length < 1) return "Full name is required.";
     if (phoneNumber && phoneNumber.trim().length < 1) return "Phone number is required.";
     if (facebookAccount && facebookAccount.trim().length < 1) return "Facebook account is required.";
-    if (!paymentMethod) return "Payment method is required.";
+    if (paymentMethod && paymentMethod < 0) return "Payment method is required.";
     if (paymentReceipts && paymentReceipts.length < 1) return "Payment receipt is required.";
     if (driversLicense && driversLicense.length < 1) return "Drivers license is required.";
     if (validId && validId.length < 1) return "Valid ID is required.";
@@ -207,17 +207,15 @@ export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, onRowA
   }, [vehiclesRow]);
 
   useEffect(() => {
-    async function fetchPaymentMethodItems() {
-      const data = await getAllPaymentMethods();
-      if (!data) return;
-      setPaymentMethodMenuItems(data.map(e => ({
-        label: e.name,
-        value: e.name
-      })));
+    async function mapPaymentMethodMenuItems() {
+      const mappedPaymentMethodMenuItems: MenuItem[] = paymentMethodRows.map(e => ({
+        value: e.id, label: e.name
+      }));
+      setPaymentMethodMenuItems(mappedPaymentMethodMenuItems);
     }
 
-    fetchPaymentMethodItems();
-  }, []);
+    mapPaymentMethodMenuItems();
+  }, [paymentMethodRows]);
 
   useEffect(() => {
     function resetForm() {
@@ -493,8 +491,8 @@ export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, onRowA
 
                           <SelectContent alignItemWithTrigger>
                             <SelectGroup>
-                              {paymentMethodMenuItems.map((item, index) => (
-                                <SelectItem key={`add-booking-payment-method-item-${index}`} value={item.value}>
+                              {paymentMethodMenuItems.map(item => (
+                                <SelectItem key={`add-booking-payment-method-item-${item.value}`} value={item.value}>
                                   {item.label}
                                 </SelectItem>
                               ))}

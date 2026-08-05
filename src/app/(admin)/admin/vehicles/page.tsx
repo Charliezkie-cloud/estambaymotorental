@@ -56,7 +56,7 @@ export default function AdminVehiclePage() {
 
         <section className="space-y-6 m-4 md:m-6">
           <h2 className="font-heading text-xl md:text-2xl font-bold">Vehicles</h2>
-          <Bubble variant="secondary">
+          <Bubble variant="tinted">
             <BubbleContent>
               To keep your data accurate, vehicles with booking history cannot be deleted. You can edit the existing vehicle details instead.
             </BubbleContent>
@@ -66,7 +66,7 @@ export default function AdminVehiclePage() {
 
         <section className="space-y-6 m-4 md:m-6">
           <h2 className="font-heading text-xl md:text-2xl font-bold">Colors</h2>
-          <Bubble variant="secondary">
+          <Bubble variant="tinted">
             <BubbleContent>
               To keep your data accurate and organized, colors with existing vehicles cannot be deleted. You can edit the existing color details instead.
             </BubbleContent>

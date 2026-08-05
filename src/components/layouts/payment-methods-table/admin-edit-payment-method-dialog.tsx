@@ -52,7 +52,7 @@ export default function AdminEditPaymentMethodDialog({ row, onRowUpdate, onCance
         })
       });
 
-      toast.success("Payment Method Added Successfully");
+      toast.success("Payment Method Updated Successfully");
       onRowUpdate(data);
     } catch (error) {
       toast.error("Failed to Add Payment Method", {

@@ -5,17 +5,14 @@ export type MenuItem = {
 };
 
 // Menu items
-export const paymentMethodMenuItems: MenuItem[] = [
-  { value: "GCash", label: "GCash" },
-  { value: "GoTyme", label: "GoTyme" },
-  { value: "Bank Transfer", label: "Bank Transfer" },
-];
-
 export const bookingStatusMenuItems: MenuItem[] = [
   { value: 1, label: "Completed" },
-  { value: 2, label: "Change Unit" },
   { value: 3, label: "Reserved" },
+  { value: 6, label: "On-Going" },
+
+  { value: 2, label: "Change Unit" },
   { value: 4, label: "Rescheduled" },
+
   { value: 5, label: "Cancelled" },
 ];
 

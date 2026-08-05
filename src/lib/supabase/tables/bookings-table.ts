@@ -14,7 +14,7 @@ type CreateBookingParameters = {
   full_name: string;
   phone_number: string;
   facebook_account: string;
-  payment_method: string;
+  payment_method_id: number;
   paymentReceiptImageFile: ActualFileObject;
   driversLicenseImageFile: ActualFileObject;
   validIdImageFile: ActualFileObject;
@@ -38,7 +38,7 @@ type UpdateBookingParameters = {
   full_name: string;
   phone_number: string;
   facebook_account: string;
-  payment_method: string;
+  payment_method_id: number;
   oldPaymentReceiptImageFilename?: string;
   oldDriversLicenseImageFilename?: string;
   oldValidIdImageFilename?: string;
@@ -62,14 +62,14 @@ export async function getAllBookings(limit?: number): Promise<BookingRow[] | nul
     if (limit) {
       const { data: responseData } = await supabaseClient
         .from("bookings")
-        .select("*, vehicles(model, vehicle_colors(name))")
+        .select("*, vehicles(model, vehicle_colors(name)), payment_methods(name)")
         .order("created_at", { ascending: false })
         .limit(limit);
       data = responseData;
     } else {
       const { data: responseData } = await supabaseClient
         .from("bookings")
-        .select("*, vehicles(model, vehicle_colors(name))")
+        .select("*, vehicles(model, vehicle_colors(name)), payment_methods(name)")
         .order("created_at", { ascending: false });
       data = responseData;
     }
@@ -106,7 +106,7 @@ export async function updateBookingStatus(id: number, status: number, isPayment?
         .from("bookings")
         .update({ payment_status: status })
         .eq("id", id)
-        .select("*, vehicles(model, vehicle_colors(name))")
+        .select("*, vehicles(model, vehicle_colors(name)), payment_methods(name)")
         .single();
       data = responseData;
     } else {
@@ -114,7 +114,7 @@ export async function updateBookingStatus(id: number, status: number, isPayment?
         .from("bookings")
         .update({ booking_status: status })
         .eq("id", id)
-        .select("*, vehicles(model, vehicle_colors(name))")
+        .select("*, vehicles(model, vehicle_colors(name)), payment_methods(name)")
         .single();
       data = responseData;
     }
@@ -148,7 +148,7 @@ export async function createBooking({
                                       full_name,
                                       phone_number,
                                       facebook_account,
-                                      payment_method,
+                                      payment_method_id,
                                       paymentReceiptImageFile,
                                       driversLicenseImageFile,
                                       validIdImageFile,
@@ -177,7 +177,7 @@ export async function createBooking({
         full_name,
         phone_number,
         facebook_account,
-        payment_method,
+        payment_method_id,
         payment_receipt_image: paymentReceiptFilename,
         drivers_license_image: driversLicenseFilename,
         valid_id_image: validIdFilename,
@@ -189,7 +189,7 @@ export async function createBooking({
         payment_status,
         amount
       })
-      .select("*, vehicles(model, vehicle_colors(name))")
+      .select("*, vehicles(model, vehicle_colors(name)), payment_methods(name)")
       .single();
 
     if (!data) return null;
@@ -220,7 +220,7 @@ export async function updateBooking({
                                       full_name,
                                       phone_number,
                                       facebook_account,
-                                      payment_method,
+                                      payment_method_id,
                                       oldPaymentReceiptImageFilename,
                                       oldDriversLicenseImageFilename,
                                       oldValidIdImageFilename,
@@ -265,7 +265,7 @@ export async function updateBooking({
         full_name,
         phone_number,
         facebook_account,
-        payment_method,
+        payment_method_id,
         ...(newPaymentReceiptImageFilename && { payment_receipt_image: newPaymentReceiptImageFilename }),
         ...(newDriverseLienceseImageFilename && { drivers_license_image: newDriverseLienceseImageFilename }),
         ...(newValidIdImageFilename && { valid_id_image: newValidIdImageFilename }),
@@ -277,7 +277,7 @@ export async function updateBooking({
         payment_status,
         amount
       })
-      .select("*, vehicles(model, vehicle_colors(name))")
+      .select("*, vehicles(model, vehicle_colors(name)), payment_methods(name)")
       .eq("id", id)
       .single();
 
@@ -303,7 +303,7 @@ export async function deleteBooking(id: number): Promise<BookingRow | null> {
     .from("bookings")
     .delete()
     .eq("id", id)
-    .select()
+    .select("*")
     .single();
 
   if (error) throw error;

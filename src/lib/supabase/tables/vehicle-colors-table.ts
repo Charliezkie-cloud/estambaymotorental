@@ -41,15 +41,18 @@ export async function updateVehicleColor(id: number, name: string): Promise<Vehi
 }
 
 export async function deleteVehicleColor(id: number): Promise<VehicleColorRow | null> {
-  const { data, error } = await supabaseClient
-    .from("vehicle_colors")
-    .delete()
-    .eq("id", id)
-    .select("*")
-    .single();
+  try {
+    const { data } = await supabaseClient
+      .from("vehicle_colors")
+      .delete()
+      .eq("id", id)
+      .select("*")
+      .single();
 
-  if (error) throw error;
-  if (!data) return null;
+    if (!data) return null;
 
-  return data;
+    return data;
+  } catch (error) {
+    throw error;
+  }
 }

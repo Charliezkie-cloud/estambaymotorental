@@ -42,12 +42,12 @@ export default function HomePage() {
       </section>
 
       {/*Vehicles*/}
-      <section className="max-w-7xl mx-4 sm:mx-6 md:mx-8 lg:mx-10 xl:mx-auto py-12">
-        <div>
-          <h2>Vehicles</h2>
-          <p>Our facility features two championship-standard courts designed with high-performance acrylic surfacing and professional LED lighting for night play.</p>
-        </div>
-      </section>
+      {/*<section className="max-w-7xl mx-4 sm:mx-6 md:mx-8 lg:mx-10 xl:mx-auto py-12">*/}
+      {/*  <div>*/}
+      {/*    <h2>Vehicles</h2>*/}
+      {/*    <p>Our facility features two championship-standard courts designed with high-performance acrylic surfacing and professional LED lighting for night play.</p>*/}
+      {/*  </div>*/}
+      {/*</section>*/}
 
     </main>
   )

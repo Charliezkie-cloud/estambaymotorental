@@ -149,7 +149,7 @@ export default function AdminDetailsBookingDialog({ row, onClose }: Props) {
                 <div className="space-y-1">
                   <h3 className="font-semibold">Payment Method</h3>
                   <hr/>
-                  <div>{row ? <p>{row.payment_method}</p> : <Skeleton className="w-full h-6" />}</div>
+                  <div>{row ? <p>{row.payment_methods?.name}</p> : <Skeleton className="w-full h-6" />}</div>
                 </div>
               </div>
 
