@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "next-themes";
 import Navbar from "@/components/layouts/navbar";
 import { Toaster } from "@/components/ui/sonner";
+import Footer from "@/components/layouts/footer";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const robotoHeading = Roboto({subsets:['latin'],variable:'--font-heading'});
 
@@ -37,10 +39,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                        defaultTheme="dark"
                        enableSystem
                        disableTransitionOnChange>
-          <header>
-            <Navbar />
-          </header>
-          {children}
+          <TooltipProvider>
+            <header>
+              <Navbar />
+            </header>
+            {children}
+            <Footer />
+          </TooltipProvider>
           <Toaster position="bottom-center" />
         </ThemeProvider>
       </body>
