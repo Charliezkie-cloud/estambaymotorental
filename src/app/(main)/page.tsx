@@ -10,7 +10,6 @@ import { PaymentMethodRow, VehicleRow } from "@/types/models.types";
 import { toast } from "sonner";
 import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
 import { getAllPaymentMethods } from "@/lib/supabase/tables/payment-methods-table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function HomePage() {
   // States
