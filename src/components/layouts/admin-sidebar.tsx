@@ -30,6 +30,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SupabaseClient } from "@supabase/supabase-js";
+import Image from "next/image";
+import Logo from "@/public/favicon.jpg";
 
 interface LinkItem {
   title: string;
@@ -112,9 +114,10 @@ export default function AdminSidebar({ supabaseClient }: Props) {
               tooltip="Estambay Moto Rentals"
             >
               {/* Logo mark */}
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-                <Bike className="h-4 w-4" />
-              </span>
+              <Image src={Logo} alt={"Estambay Moto Rentals Logo"} height={32} width={32} loading="lazy" className="rounded-full" />
+              {/*<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">*/}
+              {/*  <Bike className="h-4 w-4" />*/}
+              {/*</span>*/}
 
               {/* Brand name */}
               <div className="flex flex-col leading-none">

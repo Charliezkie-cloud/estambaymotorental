@@ -1,13 +1,12 @@
 "use client";
 
-import { EyeClosed, EyeIcon, Loader2 } from "lucide-react";
+import { EyeClosed, EyeIcon, Loader2, Lock, Mail } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
 
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabaseClient } from "@/lib/supabase/supabase-client";
@@ -24,17 +23,18 @@ export default function AdminLoginForm() {
   const [loginLoading, setLoginLoading] = useState(false);
 
   // Handlers
-  async function handleFormSubmit(e: React.ChangeEvent<HTMLFormElement>) {
+  async function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoginLoading(true);
 
     try {
       const { error: loginError } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-      if (loginError)
+      if (loginError) {
         toast.error("Login Failed", {
-          description: loginError.message
+          description: loginError.message,
         });
+      }
     } finally {
       setLoginLoading(false);
     }
@@ -46,33 +46,69 @@ export default function AdminLoginForm() {
 
   // Use effects
   useEffect(() => {
-    if (error)
+    if (error) {
       toast.error("Session Failed", {
-        description: error
+        description: error,
       });
+    }
 
-    if (!loading && user)
+    if (!loading && user) {
       return redirect("/admin");
+    }
   }, [loading, user, error]);
 
   return (
     <>
-      <CardContent>
-        <form onSubmit={handleFormSubmit} id="admin-login-form">
+      <CardContent className="pt-2 pb-4">
+        <form onSubmit={handleFormSubmit} id="admin-login-form" className="space-y-4">
           <FieldSet>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="emailAddress">Email</FieldLabel>
-                <Input type="email" name="emailAddress" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" placeholder="e.g. example@email.com" required />
+            <FieldGroup className="space-y-4">
+              <Field className="space-y-1.5">
+                <FieldLabel htmlFor="emailAddress" className="text-xs font-medium text-foreground">
+                  Email
+                </FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon align="inline-start">
+                    <Mail className="size-4 text-muted-foreground" />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="emailAddress"
+                    type="email"
+                    name="emailAddress"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    placeholder="admin@estambay.com"
+                    required
+                  />
+                </InputGroup>
               </Field>
 
-              <Field>
-                <FieldLabel htmlFor="password">Password</FieldLabel>
+              <Field className="space-y-1.5">
+                <FieldLabel htmlFor="password" className="text-xs font-medium text-foreground">
+                  Password
+                </FieldLabel>
                 <InputGroup>
-                  <InputGroupInput type={passwordShow ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" required />
+                  <InputGroupAddon align="inline-start">
+                    <Lock className="size-4 text-muted-foreground" />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="password"
+                    type={passwordShow ? "text" : "password"}
+                    name="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    required
+                  />
                   <InputGroupAddon align="inline-end">
-                    <InputGroupButton onClick={togglePassword}>
-                      {passwordShow ? <EyeIcon /> : <EyeClosed />}
+                    <InputGroupButton
+                      type="button"
+                      onClick={togglePassword}
+                      title={passwordShow ? "Hide password" : "Show password"}
+                    >
+                      {passwordShow ? <EyeIcon className="size-4" /> : <EyeClosed className="size-4" />}
                     </InputGroupButton>
                   </InputGroupAddon>
                 </InputGroup>
@@ -82,10 +118,21 @@ export default function AdminLoginForm() {
         </form>
       </CardContent>
 
-      <CardFooter>
-        <Button type="submit" form="admin-login-form" className="ms-auto" disabled={loginLoading}>
-          Login{" "}
-          {loginLoading && <Loader2 className="animate-spin" />}
+      <CardFooter className="pb-6 pt-2">
+        <Button
+          type="submit"
+          form="admin-login-form"
+          className="w-full font-medium"
+          disabled={loginLoading}
+        >
+          {loginLoading ? (
+            <>
+              <Loader2 className="size-4 animate-spin mr-2" />
+              Signing in...
+            </>
+          ) : (
+            "Sign In"
+          )}
         </Button>
       </CardFooter>
     </>
