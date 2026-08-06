@@ -188,7 +188,7 @@ export default function AdminColorsTable({ onVehicleColorsFetch, onVehicleColors
                   onClick={() => handleSortToggle("id")}
                   className="flex items-center text-xs font-medium uppercase tracking-wide hover:text-foreground transition-colors"
                 >
-                  Color ID <SortIcon field="id" />
+                  Color ID {SortIcon({ field: "id" })}
                 </button>
               </TableHead>
               <TableHead>
@@ -196,7 +196,7 @@ export default function AdminColorsTable({ onVehicleColorsFetch, onVehicleColors
                   onClick={() => handleSortToggle("created_at")}
                   className="flex items-center text-xs font-medium uppercase tracking-wide hover:text-foreground transition-colors"
                 >
-                  Created At <SortIcon field="created_at" />
+                  Created At {SortIcon({ field: "created_at" })}
                 </button>
               </TableHead>
               <TableHead>
@@ -204,7 +204,7 @@ export default function AdminColorsTable({ onVehicleColorsFetch, onVehicleColors
                   onClick={() => handleSortToggle("name")}
                   className="flex items-center text-xs font-medium uppercase tracking-wide hover:text-foreground transition-colors"
                 >
-                  Name <SortIcon field="name" />
+                  Name {SortIcon({ field: "name" })}
                 </button>
               </TableHead>
               <TableHead className="text-end text-xs font-medium uppercase tracking-wide">Actions</TableHead>

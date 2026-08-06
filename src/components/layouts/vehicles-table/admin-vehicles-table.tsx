@@ -249,7 +249,7 @@ export default function AdminVehiclesTable({ vehicleColors }: Props) {
                   onClick={() => handleSortToggle("id")}
                   className="flex items-center text-xs font-medium uppercase tracking-wide hover:text-foreground transition-colors"
                 >
-                  Vehicle ID <SortIcon field="id" />
+                  Vehicle ID {SortIcon({ field: "id" })}
                 </button>
               </TableHead>
               <TableHead>
@@ -257,7 +257,7 @@ export default function AdminVehiclesTable({ vehicleColors }: Props) {
                   onClick={() => handleSortToggle("created_at")}
                   className="flex items-center text-xs font-medium uppercase tracking-wide hover:text-foreground transition-colors"
                 >
-                  Created At <SortIcon field="created_at" />
+                  Created At {SortIcon({ field: "created_at" })}
                 </button>
               </TableHead>
               <TableHead>
@@ -265,7 +265,7 @@ export default function AdminVehiclesTable({ vehicleColors }: Props) {
                   onClick={() => handleSortToggle("model")}
                   className="flex items-center text-xs font-medium uppercase tracking-wide hover:text-foreground transition-colors"
                 >
-                  Model <SortIcon field="model" />
+                  Model {SortIcon({ field: "model" })}
                 </button>
               </TableHead>
               <TableHead className="text-xs font-medium uppercase tracking-wide">Color</TableHead>
