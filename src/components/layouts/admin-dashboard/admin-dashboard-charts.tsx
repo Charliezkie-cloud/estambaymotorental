@@ -1,28 +1,33 @@
+"use client";
+
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { MonthlyBookingsCountsViewItem, VehicleIncomesViewItem } from "@/types/models.types";
 import { getMonthlyBookingCounts, getVehiclesIncomes } from "@/lib/supabase/supabase-views";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { BarChart3, TrendingUp, DollarSign, Calendar } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Configs
 const incomeChartConfig = {
-  model: { label: "Model", color: "#fb7185" },
+  total: { label: "Revenue", color: "#f43f5e" },
 } satisfies ChartConfig;
 
 const monthlyBookingChartConfig = {
-  total_bookings: { label: "Bookings", color: "#60a5fa" }
+  total_bookings: { label: "Bookings", color: "#3b82f6" }
 } satisfies ChartConfig;
 
 export default function AdminDashboardCharts() {
   // States
   const [vehiclesIncomeData, setVehiclesIncomeData] = useState<VehicleIncomesViewItem[]>([]);
   const [monthlyBookingData, setMonthlyBookingData] = useState<MonthlyBookingsCountsViewItem[]>([]);
+  const [loadingIncome, setLoadingIncome] = useState(true);
+  const [loadingBookings, setLoadingBookings] = useState(true);
 
   // Use effects
   useEffect(() => {
-    if (vehiclesIncomeData.length > 0) return;
-
     async function fetchVehicleIncomes() {
       try {
         const data = await getVehiclesIncomes();
@@ -31,6 +36,8 @@ export default function AdminDashboardCharts() {
         toast.error("Failed to Fetch Vehicles Income", {
           description: error instanceof Error ? error.message : String(error)
         });
+      } finally {
+        setLoadingIncome(false);
       }
     }
 
@@ -38,8 +45,6 @@ export default function AdminDashboardCharts() {
   }, []);
 
   useEffect(() => {
-    if (monthlyBookingData.length > 0) return;
-
     async function fetchMonthlyBookings() {
       try {
         const data = await getMonthlyBookingCounts();
@@ -48,6 +53,8 @@ export default function AdminDashboardCharts() {
         toast.error("Failed to Fetch Monthly Bookings Data", {
           description: error instanceof Error ? error.message : String(error)
         });
+      } finally {
+        setLoadingBookings(false);
       }
     }
 
@@ -55,54 +62,141 @@ export default function AdminDashboardCharts() {
   }, []);
 
   return (
-    <div>
-      <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-6">
-        <div className="bg-card border border-border p-4 rounded-xl space-y-6">
-          <h2 className="font-heading text-center text-lg md:text-xl font-bold">Income Per Vehicle</h2>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+      {/* Income Per Vehicle Chart */}
+      <Card className="border border-border/60 shadow-sm bg-card overflow-hidden">
+        <CardHeader className="p-5 pb-2 flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="text-lg font-bold font-heading flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-rose-500" />
+              Income Per Vehicle
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground mt-0.5">
+              Revenue distribution across fleet models
+            </CardDescription>
+          </div>
+          <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500">
+            <TrendingUp className="w-4 h-4" />
+          </div>
+        </CardHeader>
 
-          <ChartContainer config={incomeChartConfig} className="w-full">
-            <BarChart data={vehiclesIncomeData} accessibilityLayer>
-              <Bar dataKey="total" radius={4} fill="var(--color-model)">
-                <LabelList
-                  position="top"
-                  offset={12}
-                  className="fill-foreground"
-                  fontSize={12}
-                  formatter={value => Number.parseInt(value as string).toLocaleString("en-PH", { style: "currency", currency: "PHP" })}
+        <CardContent className="p-5 pt-4">
+          {loadingIncome ? (
+            <div className="h-[280px] w-full flex items-end gap-3 justify-between pt-8 pb-4">
+              <Skeleton className="h-2/3 w-full rounded-t-md" />
+              <Skeleton className="h-4/5 w-full rounded-t-md" />
+              <Skeleton className="h-1/2 w-full rounded-t-md" />
+              <Skeleton className="h-full w-full rounded-t-md" />
+              <Skeleton className="h-3/4 w-full rounded-t-md" />
+            </div>
+          ) : vehiclesIncomeData.length === 0 ? (
+            <div className="h-[280px] w-full flex flex-col items-center justify-center text-muted-foreground text-sm gap-2">
+              <BarChart3 className="w-8 h-8 opacity-40" />
+              <span>No vehicle income data recorded yet</span>
+            </div>
+          ) : (
+            <ChartContainer config={incomeChartConfig} className="h-[280px] w-full">
+              <BarChart data={vehiclesIncomeData} accessibilityLayer margin={{ top: 25, right: 10, left: 10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f43f5e" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#e11d48" stopOpacity={0.6} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
+                <Bar dataKey="total" radius={[6, 6, 0, 0]} fill="url(#incomeGradient)">
+                  <LabelList
+                    position="top"
+                    offset={10}
+                    className="fill-foreground font-semibold"
+                    fontSize={11}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    formatter={(value: any) => 
+                      Number(value ?? 0).toLocaleString("en-PH", { 
+                        style: "currency", 
+                        currency: "PHP",
+                        maximumFractionDigits: 0 
+                      })
+                    }
                   />
-              </Bar>
-              <CartesianGrid vertical={false} />
-              <ChartTooltip content={<ChartTooltipContent/>} />
-              <XAxis
-                dataKey="model"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-              />
-            </BarChart>
-          </ChartContainer>
-        </div>
+                </Bar>
+                <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+                <XAxis
+                  dataKey="model"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  className="text-xs font-medium"
+                />
+              </BarChart>
+            </ChartContainer>
+          )}
+        </CardContent>
+      </Card>
 
-        <div className="bg-card border border-border p-6 rounded-xl space-y-6">
-          <h2 className="font-heading text-center text-lg md:text-xl font-bold">Monthly Bookings</h2>
-          <ChartContainer config={monthlyBookingChartConfig} className="w-full">
-            <BarChart data={monthlyBookingData} accessibilityLayer>
-              <Bar dataKey="total_bookings" radius={4} fill="var(--color-total_bookings)">
-                <LabelList position="top" offset={12} className="fill-foreground" fontSize={12} />
-              </Bar>
-              <CartesianGrid vertical={false} />
-              <ChartTooltip content={<ChartTooltipContent/>} />
-              <XAxis
-                dataKey="booking_month"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                tickFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "long" })}
-              />
-            </BarChart>
-          </ChartContainer>
-        </div>
-      </div>
+      {/* Monthly Bookings Chart */}
+      <Card className="border border-border/60 shadow-sm bg-card overflow-hidden">
+        <CardHeader className="p-5 pb-2 flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="text-lg font-bold font-heading flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-500" />
+              Monthly Bookings
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground mt-0.5">
+              Total customer bookings breakdown by month
+            </CardDescription>
+          </div>
+          <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+            <BarChart3 className="w-4 h-4" />
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-5 pt-4">
+          {loadingBookings ? (
+            <div className="h-[280px] w-full flex items-end gap-3 justify-between pt-8 pb-4">
+              <Skeleton className="h-1/2 w-full rounded-t-md" />
+              <Skeleton className="h-3/4 w-full rounded-t-md" />
+              <Skeleton className="h-full w-full rounded-t-md" />
+              <Skeleton className="h-4/5 w-full rounded-t-md" />
+            </div>
+          ) : monthlyBookingData.length === 0 ? (
+            <div className="h-[280px] w-full flex flex-col items-center justify-center text-muted-foreground text-sm gap-2">
+              <BarChart3 className="w-8 h-8 opacity-40" />
+              <span>No monthly bookings recorded yet</span>
+            </div>
+          ) : (
+            <ChartContainer config={monthlyBookingChartConfig} className="h-[280px] w-full">
+              <BarChart data={monthlyBookingData} accessibilityLayer margin={{ top: 25, right: 10, left: 10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="bookingsGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#2563eb" stopOpacity={0.6} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
+                <Bar dataKey="total_bookings" radius={[6, 6, 0, 0]} fill="url(#bookingsGradient)">
+                  <LabelList position="top" offset={10} className="fill-foreground font-semibold" fontSize={11} />
+                </Bar>
+                <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+                <XAxis
+                  dataKey="booking_month"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  className="text-xs font-medium"
+                  tickFormatter={(value) => {
+                    try {
+                      return new Date(value).toLocaleDateString("en-US", { month: "short" });
+                    } catch {
+                      return String(value);
+                    }
+                  }}
+                />
+              </BarChart>
+            </ChartContainer>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
-}
+}
