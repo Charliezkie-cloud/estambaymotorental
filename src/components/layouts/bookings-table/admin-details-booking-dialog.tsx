@@ -3,47 +3,74 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription, DialogFooter,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useState } from "react";
 import Image from "next/image";
 import Lightbox from "yet-another-react-lightbox";
+import { ExternalLinkIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 type Props = {
   row?: BookingRow;
   onClose: () => void;
 };
 
+interface DetailFieldProps {
+  label: string;
+  children: React.ReactNode;
+}
+
+function DetailField({ label, children }: DetailFieldProps) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{label}</p>
+      <div className="text-sm font-medium">{children}</div>
+    </div>
+  );
+}
+
+function formatTimeString(timeStr: string): string {
+  const [hourStr, minuteStr] = timeStr.split(":");
+  let hour = parseInt(hourStr, 10);
+  const period = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12;
+  return minuteStr === "00" ? `${hour} ${period}` : `${hour}:${minuteStr} ${period}`;
+}
+
 export default function AdminDetailsBookingDialog({ row, onClose }: Props) {
-  // States
   const [imagePreview, setImagePreview] = useState<string | undefined>(undefined);
 
-  // Constants
-  const formattedRentalDate = row && new Date(row.rental_date).toLocaleDateString("en-PH", {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-  const formattedRentalTime = row && formatTimeString(row.time_of_rental);
-  const formattedReturnDate = row && new Date(row.return_date).toLocaleDateString("en-PH", {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-  const formattedReturnTime = row && formatTimeString(row.time_of_return);
+  const formattedCreatedAt = row
+    ? new Date(row.created_at).toLocaleDateString("en-PH", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        hour12: true,
+      })
+    : undefined;
 
-  // Helpers
-  function formatTimeString(timeStr: string): string {
-    const [hourStr, minuteStr] = timeStr.split(':');
-    let hour = parseInt(hourStr, 10);
-    const period = hour >= 12 ? 'PM' : 'AM';
+  const formattedRentalDate = row
+    ? new Date(row.rental_date).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" })
+    : undefined;
 
-    hour = hour % 12 || 12;
-    return minuteStr === '00' ? `${hour} ${period}` : `${hour}:${minuteStr} ${period}`;
-  }
+  const formattedReturnDate = row
+    ? new Date(row.return_date).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" })
+    : undefined;
+
+  const formattedRentalTime = row ? formatTimeString(row.time_of_rental) : undefined;
+  const formattedReturnTime = row ? formatTimeString(row.time_of_return) : undefined;
+
+  const formattedAmount = row?.amount.toLocaleString("en-PH", { style: "currency", currency: "PHP" });
+  const formattedDeliveryFee = row?.delivery_fee.toLocaleString("en-PH", { style: "currency", currency: "PHP" });
+  const formattedPickupFee = row?.pickup_fee.toLocaleString("en-PH", { style: "currency", currency: "PHP" });
 
   return (
     <>
@@ -56,197 +83,265 @@ export default function AdminDetailsBookingDialog({ row, onClose }: Props) {
       )}
 
       <Dialog open={!!row}>
-        <DialogContent showCloseButton={false}>
+        <DialogContent showCloseButton={false} className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Booking Details</DialogTitle>
-            <DialogDescription>The details of the Booking.</DialogDescription>
+            <DialogDescription>
+              Viewing details for booking{" "}
+              <span className="font-medium text-foreground">#{row?.id ?? "—"}</span>.
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="overflow-y-auto max-h-[75vh] pe-2">
-            <div className="space-y-7">
+          <div className="overflow-y-auto max-h-[70vh] pe-1">
+            <div className="space-y-5">
 
-              <hr/>
-
+              {/* — Booking Info — */}
               <div className="space-y-1">
-                <h2 className="text-lg font-semibold">Rental Details</h2>
-                <p className="text-muted-foreground text-sm">The details of the rental.</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Booking Info</p>
+                <Separator />
               </div>
 
-              <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Vehicle</h3>
-                  <hr/>
-                  <div>{row ? <p>{row.vehicles?.model}</p> : <Skeleton className="w-full h-6" />}</div>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                <DetailField label="Booking ID">
+                  {row ? (
+                    <span className="font-mono">#{row.id}</span>
+                  ) : (
+                    <Skeleton className="h-5 w-16" />
+                  )}
+                </DetailField>
 
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Vehicle Color</h3>
-                  <hr/>
-                  <div>{row ? <p>{row.vehicles?.vehicle_colors?.name}</p> : <Skeleton className="w-full h-6" />}</div>
-                </div>
+                <DetailField label="Booked At">
+                  {row ? (
+                    <span>{formattedCreatedAt}</span>
+                  ) : (
+                    <Skeleton className="h-5 w-32" />
+                  )}
+                </DetailField>
+
+                <DetailField label="Booking Status">
+                  {!row && <Skeleton className="h-5 w-24" />}
+                  {row?.booking_status === 1 && <Badge>Completed</Badge>}
+                  {row?.booking_status === 2 && <Badge variant="outline">Change Unit</Badge>}
+                  {row?.booking_status === 3 && <Badge variant="secondary">Reserved</Badge>}
+                  {row?.booking_status === 4 && <Badge variant="outline">Rescheduled</Badge>}
+                  {row?.booking_status === 5 && <Badge variant="destructive">Cancelled</Badge>}
+                  {row?.booking_status === 6 && <Badge variant="secondary">On-Going</Badge>}
+                </DetailField>
+
+                <DetailField label="Payment Status">
+                  {!row && <Skeleton className="h-5 w-24" />}
+                  {row?.payment_status === 1 && <Badge>Paid</Badge>}
+                  {row?.payment_status === 2 && <Badge variant="secondary">Partially Paid</Badge>}
+                  {row?.payment_status === 3 && <Badge variant="outline">Pending</Badge>}
+                </DetailField>
               </div>
 
-              <div className="space-y-1">
-                <h3 className="font-semibold">Number of Rent Days</h3>
-                <hr/>
-                <div>{row ? <p>{row.number_of_days_rent} Days</p> : <Skeleton className="w-full h-6" />}</div>
+              {/* — Rental Details — */}
+              <div className="space-y-1 pt-1">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Rental Details</p>
+                <Separator />
               </div>
 
-              <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Rental Date</h3>
-                  <hr/>
-                  <div>{row ? <p>{formattedRentalDate}</p> : <Skeleton className="w-full h-6" />}</div>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                <DetailField label="Vehicle">
+                  {row ? (
+                    <span>
+                      {row.vehicles?.model ?? "—"}
+                      {row.vehicles?.vehicle_colors?.name && (
+                        <span className="text-muted-foreground font-normal"> ({row.vehicles.vehicle_colors.name})</span>
+                      )}
+                    </span>
+                  ) : (
+                    <Skeleton className="h-5 w-32" />
+                  )}
+                </DetailField>
 
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Rental Time</h3>
-                  <hr/>
-                  <div>{row ? <p>{formattedRentalTime}</p> : <Skeleton className="w-full h-6" />}</div>
-                </div>
+                <DetailField label="Number of Days">
+                  {row ? (
+                    <span>{row.number_of_days_rent} {row.number_of_days_rent === 1 ? "day" : "days"}</span>
+                  ) : (
+                    <Skeleton className="h-5 w-16" />
+                  )}
+                </DetailField>
               </div>
 
-              <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Return Date</h3>
-                  <hr/>
-                  <div>{row ? <p>{formattedReturnDate}</p> : <Skeleton className="w-full h-6" />}</div>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                <DetailField label="Rental Date">
+                  {row ? <span>{formattedRentalDate}</span> : <Skeleton className="h-5 w-24" />}
+                </DetailField>
 
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Return Time</h3>
-                  <hr/>
-                  <div>{row ? <p>{formattedReturnTime}</p> : <Skeleton className="w-full h-6" />}</div>
-                </div>
+                <DetailField label="Rental Time">
+                  {row ? <span>{formattedRentalTime}</span> : <Skeleton className="h-5 w-20" />}
+                </DetailField>
+
+                <DetailField label="Return Date">
+                  {row ? <span>{formattedReturnDate}</span> : <Skeleton className="h-5 w-24" />}
+                </DetailField>
+
+                <DetailField label="Return Time">
+                  {row ? <span>{formattedReturnTime}</span> : <Skeleton className="h-5 w-20" />}
+                </DetailField>
               </div>
 
-              <div className="space-y-1">
-                <h2 className="text-lg font-semibold">Renters Details</h2>
-                <p className="text-muted-foreground text-sm">The details of the renter.</p>
+              {/* — Customer Details — */}
+              <div className="space-y-1 pt-1">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Customer Details</p>
+                <Separator />
               </div>
 
-              <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Full Name</h3>
-                  <hr/>
-                  <div>{row ? <p>{row.full_name}</p> : <Skeleton className="w-full h-6" />}</div>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <DetailField label="Full Name">
+                  {row ? <span>{row.full_name}</span> : <Skeleton className="h-5 w-32" />}
+                </DetailField>
 
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Phone Number</h3>
-                  <hr/>
-                  <div>{row ? <p>{row.phone_number}</p> : <Skeleton className="w-full h-6" />}</div>
-                </div>
+                <DetailField label="Phone Number">
+                  {row ? <span>{row.phone_number}</span> : <Skeleton className="h-5 w-28" />}
+                </DetailField>
+
+                <DetailField label="Facebook Account">
+                  {row ? <span>{row.facebook_account}</span> : <Skeleton className="h-5 w-28" />}
+                </DetailField>
+
+                <DetailField label="Payment Method">
+                  {row ? <span>{row.payment_methods?.name ?? "—"}</span> : <Skeleton className="h-5 w-24" />}
+                </DetailField>
               </div>
 
-              <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Facebook Account</h3>
-                  <hr/>
-                  <div>{row ? <p>{row.facebook_account}</p> : <Skeleton className="w-full h-6" />}</div>
-                </div>
-
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Payment Method</h3>
-                  <hr/>
-                  <div>{row ? <p>{row.payment_methods?.name}</p> : <Skeleton className="w-full h-6" />}</div>
-                </div>
+              {/* — Documents — */}
+              <div className="space-y-1 pt-1">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Documents</p>
+                <Separator />
               </div>
 
-              <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Drivers License Image</h3>
-                  <p className="text-muted-foreground text-sm">Click the image to full screen view.</p>
-                  <hr/>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Driver&apos;s License</p>
                   {(row && row.drivers_license_image_url) ? (
-                    <div className="relative w-full h-[150px]">
-                      <Image src={row.drivers_license_image_url ?? ""}
-                             alt={`${row.full_name} Drivers License Image`}
-                             className="object-cover rounded-xl cursor-pointer"
-                             onClick={() => setImagePreview(row.drivers_license_image_url)}
-                             loading="lazy"
-                             fill unoptimized />
+                    <div
+                      className="group relative w-full aspect-video rounded-xl overflow-hidden border border-border cursor-pointer"
+                      onClick={() => setImagePreview(row.drivers_license_image_url)}
+                    >
+                      <Image
+                        src={row.drivers_license_image_url ?? ""}
+                        alt={`${row.full_name} driver's license`}
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                        fill
+                        unoptimized
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center">
+                        <ExternalLinkIcon className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-8 w-8 drop-shadow-lg" />
+                      </div>
                     </div>
                   ) : (
-                    <Skeleton className="w-full h-[150px]" />
+                    <Skeleton className="w-full aspect-video rounded-xl" />
                   )}
                 </div>
 
-                <div className="space-y-1">
-                  <h3 className="font-semibold">Valid ID Image</h3>
-                  <p className="text-muted-foreground text-sm">Click the image to full screen view.</p>
-                  <hr/>
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Valid ID</p>
                   {(row && row.valid_id_image_url) ? (
-                    <div className="relative w-full h-[150px]">
-                      <Image src={row.valid_id_image_url ?? ""}
-                             alt={`${row.full_name} Valid ID Image`}
-                             className="object-cover rounded-xl cursor-pointer"
-                             onClick={() => setImagePreview(row.valid_id_image_url)}
-                             loading="lazy"
-                             fill unoptimized />
+                    <div
+                      className="group relative w-full aspect-video rounded-xl overflow-hidden border border-border cursor-pointer"
+                      onClick={() => setImagePreview(row.valid_id_image_url)}
+                    >
+                      <Image
+                        src={row.valid_id_image_url ?? ""}
+                        alt={`${row.full_name} valid ID`}
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                        fill
+                        unoptimized
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center">
+                        <ExternalLinkIcon className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-8 w-8 drop-shadow-lg" />
+                      </div>
                     </div>
                   ) : (
-                    <Skeleton className="w-full h-[150px]" />
+                    <Skeleton className="w-full aspect-video rounded-xl" />
                   )}
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <h3 className="font-semibold">Receipt Image</h3>
-                <p className="text-muted-foreground text-sm">Click the image to full screen view.</p>
-                <hr/>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Payment Receipt</p>
                 {(row && row.receipt_image_url) ? (
-                  <div className="relative w-full h-[250px]">
-                    <Image src={row.receipt_image_url ?? ""}
-                           alt={`${row.full_name} Receipt Image`}
-                           className="object-cover rounded-xl cursor-pointer"
-                           onClick={() => setImagePreview(row.receipt_image_url)}
-                           loading="lazy"
-                           fill unoptimized />
+                  <div
+                    className="group relative w-full aspect-video rounded-xl overflow-hidden border border-border cursor-pointer"
+                    onClick={() => setImagePreview(row.receipt_image_url)}
+                  >
+                    <Image
+                      src={row.receipt_image_url ?? ""}
+                      alt={`${row.full_name} payment receipt`}
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                      fill
+                      unoptimized
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center">
+                      <ExternalLinkIcon className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-8 w-8 drop-shadow-lg" />
+                    </div>
                   </div>
                 ) : (
-                  <Skeleton className="w-full h-[250px]" />
+                  <Skeleton className="w-full aspect-video rounded-xl" />
                 )}
               </div>
 
-              <div className="space-y-1">
-                <h2 className="text-lg font-semibold">Delivery Details</h2>
-                <p className="text-muted-foreground text-sm">The delivery details of the booking.</p>
+              {/* — Delivery Details — */}
+              <div className="space-y-1 pt-1">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Delivery Details</p>
+                <Separator />
               </div>
 
-              <div className="space-y-1">
-                <h3 className="font-semibold">Is Delivery?</h3>
-                <hr/>
-                <div>{row ? <p>{row.is_delivery === 1 ? "Yes" : "No"}</p> : <Skeleton className="w-full h-6" />}</div>
-              </div>
+              <DetailField label="Is Delivery?">
+                {row ? (
+                  <span>{row.is_delivery === 1 ? "Yes" : "No"}</span>
+                ) : (
+                  <Skeleton className="h-5 w-10" />
+                )}
+              </DetailField>
 
-              {(row && row.is_delivery === 1) && (
-                <>
-                  <div className="space-y-1">
-                    <h3 className="font-semibold">Delivery Address</h3>
-                    <hr/>
-                    <div>{row ? <p>{row.address_for_delivery}</p> : <Skeleton className="w-full h-6" />}</div>
+              {row?.is_delivery === 1 && (
+                <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-5">
+                  <DetailField label="Delivery Address">
+                    {row ? <span>{row.address_for_delivery}</span> : <Skeleton className="h-5 w-48" />}
+                  </DetailField>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <DetailField label="Delivery Fee">
+                      {row ? <span>{formattedDeliveryFee}</span> : <Skeleton className="h-5 w-20" />}
+                    </DetailField>
+
+                    <DetailField label="Pickup Fee">
+                      {row ? <span>{formattedPickupFee}</span> : <Skeleton className="h-5 w-20" />}
+                    </DetailField>
                   </div>
-
-                  <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold">Delivery Fee</h3>
-                      <hr/>
-                      <div>{row ? <p>{row.delivery_fee.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p> : <Skeleton className="w-full h-6" />}</div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <h3 className="font-semibold">Pickup Fee</h3>
-                      <hr/>
-                      <div>{row ? <p>{row.pickup_fee.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p> : <Skeleton className="w-full h-6" />}</div>
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
+
+              {/* — Total Amount — */}
+              <div className="space-y-1 pt-1">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Amount</p>
+                <Separator />
+              </div>
+
+              <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Total Amount</p>
+                {row ? (
+                  <p className="text-lg font-semibold tabular-nums">{formattedAmount}</p>
+                ) : (
+                  <Skeleton className="h-7 w-28" />
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Based on {row?.number_of_days_rent ?? "—"} day(s) of rental
+                  {row?.is_delivery === 1 ? " plus delivery fees" : ""}.
+                </p>
+              </div>
+
             </div>
           </div>
 
-          <DialogFooter className="space-x-2">
+          <DialogFooter className="pt-2 border-t border-border">
             <DialogClose onClick={onClose}>Close</DialogClose>
           </DialogFooter>
         </DialogContent>

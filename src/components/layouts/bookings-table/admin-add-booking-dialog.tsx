@@ -1,22 +1,16 @@
-import  {
-  Dialog, DialogClose,
+import {
+  Dialog,
+  DialogClose,
   DialogContent,
-  DialogDescription, DialogFooter,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { ChevronDownIcon, Loader2, PlusIcon } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSeparator,
-  FieldSet
-} from "@/components/ui/field";
+import { ExternalLinkIcon, Loader2, PlusIcon } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { BookingRow, PaymentMethodRow, VehicleRow } from "@/types/models.types";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -26,21 +20,21 @@ import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { FilePondFile } from "filepond";
 import { FilePond } from "react-filepond";
-import { motion, AnimatePresence } from "motion/react";
-
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import {
-  MenuItem,
-  paymentStatusMenuItems,
-  bookingStatusMenuItems
-} from "@/lib/data/menu-items-data";
+import { Separator } from "@/components/ui/separator";
+import { MenuItem, paymentStatusMenuItems, bookingStatusMenuItems } from "@/lib/data/menu-items-data";
 import { getCurrentTimeString, getDaysBetween } from "@/lib/helpers/datetime-helpers";
 import { createBooking } from "@/lib/supabase/tables/bookings-table";
-import { checkBookingConflict } from "@/lib/helpers/booking-availability-helpers";
+import {
+  checkBookingConflict,
+  getVehicleActiveBookings,
+  isDateBookedForVehicle,
+} from "@/lib/helpers/booking-availability-helpers";
 import Image from "next/image";
 import Lightbox from "yet-another-react-lightbox";
+import { ChevronDownIcon } from "lucide-react";
 
 type Props = {
   bookingsRow: BookingRow[];
@@ -49,20 +43,22 @@ type Props = {
   onRowAdd: (e: BookingRow | null) => void;
 };
 
-type DisabledRangeItem = {
-  from: Date;
-  to: Date;
-};
+const REQUIRED = <span className="text-destructive font-bold ms-0.5">*</span>;
 
 export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, paymentMethodRows, onRowAdd }: Props) {
   // States
   const [open, setOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | undefined>(undefined);
-  const [bookedDates, setBookedDates] = useState<DisabledRangeItem[]>([]);
 
   // Menu items
-  const [vehicleMenuItems, setVehicleMenuItems] = useState<MenuItem[]>([]);
-  const [paymentMethodMenuItems, setPaymentMethodMenuItems] = useState<MenuItem[]>([]);
+  const vehicleMenuItems = useMemo<MenuItem[]>(
+    () => vehiclesRow.map((e) => ({ value: e.id, label: `${e.model} (${e.vehicle_colors?.name ?? "—"})` })),
+    [vehiclesRow]
+  );
+  const paymentMethodMenuItems = useMemo<MenuItem[]>(
+    () => paymentMethodRows.map((e) => ({ value: e.id, label: e.name })),
+    [paymentMethodRows]
+  );
 
   // Form states
   const [vehicle, setVehicle] = useState<number | null>(null);
@@ -91,87 +87,85 @@ export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, paymen
 
   const [loading, setLoading] = useState(false);
 
+  // Active bookings for the selected vehicle (for calendar disabling)
+  const activeBookings = useMemo(
+    () => (vehicle ? getVehicleActiveBookings(bookingsRow, vehicle) : []),
+    [bookingsRow, vehicle]
+  );
+
+  // Helpers
+  function validateForm(): string | false {
+    if (!vehicle || vehicle < 0) return "Vehicle is required.";
+    if (!rentalDate || !rentalTime) return "Rental date and time is required.";
+    if (!returnDate || !returnTime) return "Return date and time is required.";
+    if (!fullName || fullName.trim().length < 1) return "Full name is required.";
+    if (!phoneNumber || phoneNumber.trim().length < 1) return "Phone number is required.";
+    if (!facebookAccount || facebookAccount.trim().length < 1) return "Facebook account is required.";
+    if (!paymentMethod || paymentMethod < 0) return "Payment method is required.";
+    if (!paymentReceipts || paymentReceipts.length < 1) return "Payment receipt is required.";
+    if (!driversLicense || driversLicense.length < 1) return "Driver's license is required.";
+    if (!validId || validId.length < 1) return "Valid ID is required.";
+    if (isDelivery) {
+      if (!deliveryAddress || deliveryAddress.trim().length < 1) return "Delivery address is required.";
+      if (deliveryFee !== undefined && deliveryFee < 0) return "Delivery fee cannot be negative.";
+      if (pickupFee !== undefined && pickupFee < 0) return "Pickup fee cannot be negative.";
+    }
+    return false;
+  }
+
   // Handlers
   async function onFormSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
 
     const validationMessage = validateForm();
-    if (typeof validationMessage === "string") {
+    if (validationMessage) {
       toast.error("Invalid Form Input", { description: validationMessage });
       return setLoading(false);
     }
 
-    if (!paymentReceipts) {
-      toast.error("Invalid Form Input", { description: "Payment receipt image is required." });
-      return setLoading(false);
-    }
-    if (!driversLicense) {
-      toast.error("Invalid Form Input", { description: "Drivers license image is required." });
-      return setLoading(false);
-    }
-    if (!validId) {
-      toast.error("Invalid Form Input", { description: "Valid ID image is required." });
-      return setLoading(false);
-    }
-
     try {
-      // Double booking conflict validation
+      const dateNow = new Date();
+
       if (vehicle && rentalDate && rentalTime && returnDate && returnTime) {
-        const conflictResult = checkBookingConflict(
-          vehicle,
-          rentalDate,
-          rentalTime,
-          returnDate,
-          returnTime,
-          bookingsRow
-        );
+        const conflictResult = checkBookingConflict(vehicle, rentalDate, rentalTime, returnDate, returnTime, bookingsRow);
         if (conflictResult.hasConflict) {
-          toast.error("Double Booking Conflict", {
-            description: conflictResult.message
-          });
+          toast.error("Double Booking Conflict", { description: conflictResult.message });
           return setLoading(false);
         }
       }
 
-      const dateNow = new Date();
       const numberOfDaysRent = getDaysBetween(rentalDate ?? dateNow, returnDate ?? dateNow);
-      const foundVehiclesIndex = vehiclesRow.findIndex(e => e.id === vehicle);
-      const vehicleAmount = vehiclesRow[foundVehiclesIndex].daily_price;
+      const foundVehicleIdx = vehiclesRow.findIndex((e) => e.id === vehicle);
+      const vehicleAmount = vehiclesRow[foundVehicleIdx].daily_price;
       let deliveryAmount = 0;
-
       if (isDelivery) {
         deliveryAmount += deliveryFee ?? 0;
         deliveryAmount += pickupFee ?? 0;
       }
+      const totalAmount = (vehicleAmount * numberOfDaysRent) + deliveryAmount;
 
-      const totalAmount = vehicleAmount + deliveryAmount;
       const data = await createBooking({
         vehicle_id: vehicle ?? -1,
-
         number_of_days_rent: numberOfDaysRent,
-        rental_date:  rentalDate ? rentalDate.toDateString() : dateNow.toDateString(),
+        rental_date: rentalDate ? rentalDate.toDateString() : dateNow.toDateString(),
         time_of_rental: rentalTime ?? dateNow.toTimeString(),
-        return_date:  returnDate ? returnDate.toDateString() : dateNow.toDateString(),
+        return_date: returnDate ? returnDate.toDateString() : dateNow.toDateString(),
         time_of_return: returnTime ?? dateNow.toTimeString(),
-
         full_name: fullName ?? "",
         phone_number: phoneNumber ?? "",
         facebook_account: facebookAccount ?? "",
         payment_method_id: paymentMethod ?? -1,
-        paymentReceiptImageFile: paymentReceipts[0].file,
-        driversLicenseImageFile: driversLicense[0].file,
-        validIdImageFile: validId[0].file,
-
+        paymentReceiptImageFile: paymentReceipts![0].file,
+        driversLicenseImageFile: driversLicense![0].file,
+        validIdImageFile: validId![0].file,
         is_delivery: isDelivery ? 1 : 0,
         address_for_delivery: deliveryAddress ?? "",
         delivery_fee: deliveryFee ?? 0,
         pickup_fee: pickupFee ?? 0,
-
         booking_status: bookingStatus ?? 3,
         payment_status: paymentStatus ?? 3,
-
-        amount: totalAmount
+        amount: totalAmount,
       });
 
       toast.success("Booking Added Successfully");
@@ -179,99 +173,36 @@ export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, paymen
       onRowAdd(data);
     } catch (error) {
       toast.error("Failed to Add Booking", {
-        description: error instanceof Error ? error.message : String(error)
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setLoading(false);
     }
   }
 
-  // Helpers
-  function validateForm(): string | boolean {
-    if (vehicle && vehicle < 0) return "Vehicle is required.";
-
-    if (!rentalDate || !rentalTime) return "Rental date and time is required.";
-    if (!returnDate || !rentalTime) return "Return date and time is required.";
-
-    if (fullName && fullName.trim().length < 1) return "Full name is required.";
-    if (phoneNumber && phoneNumber.trim().length < 1) return "Phone number is required.";
-    if (facebookAccount && facebookAccount.trim().length < 1) return "Facebook account is required.";
-    if (paymentMethod && paymentMethod < 0) return "Payment method is required.";
-    if (paymentReceipts && paymentReceipts.length < 1) return "Payment receipt is required.";
-    if (driversLicense && driversLicense.length < 1) return "Drivers license is required.";
-    if (validId && validId.length < 1) return "Valid ID is required.";
-
-    // Is delivery
-    if (!isDelivery)
-      return false;
-
-    if (deliveryAddress && deliveryAddress.trim().length < 1) return "Delivery address is required.";
-    if (deliveryFee && deliveryFee < 0) return "Delivery fee cannot be a negative number.";
-    if (pickupFee && pickupFee < 0) return "Pickup fee cannot be a negative number.";
-
-    return false;
-  }
-
-  // Use effects
+  // Reset form when dialog opens
   useEffect(() => {
-    async function mapVehicleMenuItems() {
-      const mappedVehicleMenuItems: MenuItem[] = vehiclesRow.map(e => {
-        return { value: e.id, label: `${e.model} (${e.vehicle_colors?.name})` };
-      });
-
-      setVehicleMenuItems(mappedVehicleMenuItems);
-    }
-
-    mapVehicleMenuItems();
-  }, [vehiclesRow]);
-
-  useEffect(() => {
-    async function mapPaymentMethodMenuItems() {
-      const mappedPaymentMethodMenuItems: MenuItem[] = paymentMethodRows.map(e => ({
-        value: e.id, label: e.name
-      }));
-      setPaymentMethodMenuItems(mappedPaymentMethodMenuItems);
-    }
-
-    mapPaymentMethodMenuItems();
-  }, [paymentMethodRows]);
-
-  useEffect(() => {
-    function resetForm() {
-      if (!open) return;
-
-      setVehicleImagePreview(undefined);
-      setVehicle(null);
-      setRentalDate(undefined);
-      setRentalTime(undefined);
-      setReturnDate(undefined);
-      setReturnTime(undefined);
-      setFullName(undefined);
-      setPhoneNumber(undefined);
-      setFacebookAccount(undefined)
-      setPaymentMethod(null);
-      setPaymentReceipts(null);
-      setDriversLicense(null);
-      setValidId(null);
-      setIsDelivery(false);
-      setDeliveryAddress(undefined);
-      setDeliveryFee(undefined);
-      setPickupFee(undefined);
-    }
-
-    resetForm();
+    if (!open) return;
+    setVehicle(null); // eslint-disable-line react-hooks/set-state-in-effect
+    setVehicleImagePreview(undefined);
+    setRentalDate(undefined);
+    setRentalTime(undefined);
+    setReturnDate(undefined);
+    setReturnTime(undefined);
+    setFullName(undefined);
+    setPhoneNumber(undefined);
+    setFacebookAccount(undefined);
+    setPaymentMethod(null);
+    setPaymentReceipts(null);
+    setDriversLicense(null);
+    setValidId(null);
+    setIsDelivery(false);
+    setDeliveryAddress(undefined);
+    setDeliveryFee(undefined);
+    setPickupFee(undefined);
+    setBookingStatus(3);
+    setPaymentStatus(3);
   }, [open]);
-
-  useEffect(() => {
-    function getBookedDates() {
-      setBookedDates(bookingsRow.map(e => ({
-        from: new Date(e.rental_date),
-        to: new Date(new Date(e.return_date).getTime() - 86400000)
-      })));
-    }
-
-    getBookedDates();
-  }, [bookingsRow]);
 
   return (
     <>
@@ -284,338 +215,440 @@ export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, paymen
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger className="ms-auto">
-          <PlusIcon />
-        </DialogTrigger>
+        <DialogTrigger
+          render={
+            <Button id="add-booking-trigger">
+              <PlusIcon className="h-4 w-4" />
+              Add Booking
+            </Button>
+          }
+        />
 
-        <DialogContent showCloseButton={false}>
+        <DialogContent showCloseButton={false} className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Add Booking</DialogTitle>
-            <DialogDescription>Add a booking manually.</DialogDescription>
+            <DialogDescription>Fill in the details below to manually register a new booking.</DialogDescription>
           </DialogHeader>
 
-          <div className="overflow-y-auto max-h-[75vh] pe-2">
+          <div className="overflow-y-auto max-h-[70vh] pe-1">
             <form id="add-booking-form" onSubmit={onFormSubmit}>
-              <FieldSet>
-                <FieldSeparator />
-                <FieldSet>
-                  <FieldLegend>Booking Status</FieldLegend>
-                  <FieldDescription>The status of the booking.</FieldDescription>
+              <FieldGroup className="space-y-5">
 
-                  <Field>
-                    <FieldLabel htmlFor="booking_status">Booking Status <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Select items={bookingStatusMenuItems} value={bookingStatus} onValueChange={e => setBookingStatus(e)} autoComplete="off" name="booking_status" required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a Booking Status" />
-                      </SelectTrigger>
+                {/* — Booking Status — */}
+                <div className="space-y-7">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Booking Status</p>
+                    <Separator />
+                  </div>
 
-                      <SelectContent alignItemWithTrigger>
-                        <SelectGroup>
-                          {bookingStatusMenuItems.map(item => (
-                            <SelectItem key={`edit-booking-booking-status-item-${item.value}`} value={item.value}>
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                    <FieldDescription>Select a booking status.</FieldDescription>
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="payment_status">Payment Status <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Select items={paymentStatusMenuItems} value={paymentStatus} onValueChange={e => setPaymentStatus(e)} autoComplete="off" name="payment_status" required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a Payment Status" />
-                      </SelectTrigger>
-
-                      <SelectContent alignItemWithTrigger>
-                        <SelectGroup>
-                          {paymentStatusMenuItems.map(item => (
-                            <SelectItem key={`edit-booking-payment-status-item-${item.value}`} value={item.value}>
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                    <FieldDescription>Select a payment status.</FieldDescription>
-                  </Field>
-                </FieldSet>
-
-                <FieldSeparator />
-                <FieldSet>
-                  <FieldLegend>Rental Details</FieldLegend>
-                  <FieldDescription>The details of the rental.</FieldDescription>
-                  <FieldGroup>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <Field>
-                      <FieldLabel htmlFor="vehicle">Vehicle <span className="text-red-400 font-bold">*</span></FieldLabel>
+                      <FieldLabel htmlFor="add-booking-status">Booking Status {REQUIRED}</FieldLabel>
                       <Select
-                        items={vehicleMenuItems}
-                        value={vehicle} onValueChange={e => {
-                          setVehicle(e);
-                          const foundIndex = vehiclesRow.findIndex(row => row.id === e);
-                          if (foundIndex === -1) return;
-                          setVehicleImagePreview(vehiclesRow[foundIndex].imageUrl);
-                        }}
-                        autoComplete="off"
-                        name="vehicle"
+                        items={bookingStatusMenuItems}
+                        value={bookingStatus}
+                        onValueChange={(e) => setBookingStatus(e)}
+                        name="booking_status"
                         required
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a Vehicle" />
+                        <SelectTrigger id="add-booking-status">
+                          <SelectValue placeholder="Select a booking status" />
                         </SelectTrigger>
-
                         <SelectContent alignItemWithTrigger>
                           <SelectGroup>
-                            {vehicleMenuItems.map(item => (
-                              <SelectItem key={`add-booking-vehicle-item-${item.value}`} value={item.value}>
+                            {bookingStatusMenuItems.map((item) => (
+                              <SelectItem key={`add-booking-status-${item.value}`} value={item.value}>
                                 {item.label}
                               </SelectItem>
                             ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
-                      <FieldDescription>Choose a vehicle for the rental.</FieldDescription>
-                    </Field>
-
-                    <AnimatePresence>
-                      {vehicleImagePreview && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1, transition: { duration: 0.3 } }}
-                          exit={{ opacity: 0 }}
-                          className="rounded-2xl bg-white relative w-full h-[500px]"
-                        >
-                          <Image
-                            src={vehicleImagePreview ?? ""}
-                            alt={`${vehicleImagePreview} Vehicle Image`}
-                            className="object-cover rounded-xl cursor-pointer"
-                            onClick={() => setImagePreview(vehicleImagePreview)}
-                            loading="lazy"
-                            fill unoptimized
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                      <Field>
-                        <FieldLabel>Rental Date <span className="text-red-400 font-bold">*</span></FieldLabel>
-                        <Popover>
-                          <PopoverTrigger render={
-                            <Button variant={"outline"} data-empty={!rentalDate} className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground">
-                              {rentalDate ? format(rentalDate, "PPP") : <span>Pick a Rental Date</span>}
-                              <ChevronDownIcon data-icon="inline-end" />
-                            </Button>} />
-
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single"
-                                      disabled={bookedDates}
-                                      selected={rentalDate ?? new Date()}
-                                      onSelect={(e) => {
-                                        setRentalDate(e);
-                                        setRentalTime(getCurrentTimeString(e));
-                                      }}
-                                      defaultMonth={rentalDate}
-                                      required />
-                          </PopoverContent>
-                        </Popover>
-                        <FieldDescription>Pick the start of the rental.</FieldDescription>
-                      </Field>
-
-                      <Field>
-                        <FieldLabel htmlFor="rental_time">Rental Time <span className="text-red-400 font-bold">*</span></FieldLabel>
-                        <Input type="time"
-                               name="rental_time"
-                               value={rentalTime ?? ""}
-                               onChange={e => setRentalTime(e.target.value)}
-                               step="1"
-                               required />
-                        <FieldDescription>Pick the start time of the rental.</FieldDescription>
-                      </Field>
-                    </div>
-
-                    <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                      <Field>
-                        <FieldLabel>Return Date <span className="text-red-400 font-bold">*</span></FieldLabel>
-                        <Popover>
-                          <PopoverTrigger render={
-                            <Button variant={"outline"} data-empty={!returnDate} className="w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground">
-                              {returnDate ? format(returnDate, "PPP") : <span>Pick a Return Date</span>}
-                              <ChevronDownIcon data-icon="inline-end" />
-                            </Button>} />
-
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single"
-                                      disabled={{ before: rentalDate ?? new Date() }}
-                                      selected={returnDate ?? new Date()}
-                                      onSelect={(e) => {
-                                        setReturnDate(e);
-                                        setReturnTime(getCurrentTimeString(e));
-                                      }}
-                                      defaultMonth={returnDate}
-                                      required />
-                          </PopoverContent>
-                        </Popover>
-                        <FieldDescription>Pick the return date of the rental.</FieldDescription>
-                      </Field>
-
-                      <Field>
-                        <FieldLabel htmlFor="return_date">Return Time <span className="text-red-400 font-bold">*</span></FieldLabel>
-                        <Input type="time"
-                               name="return_time"
-                               value={returnTime ?? ""}
-                               onChange={e => setReturnTime(e.target.value)}
-                               step="1"
-                               required />
-                        <FieldDescription>Pick the return time of the rental.</FieldDescription>
-                      </Field>
-                    </div>
-                  </FieldGroup>
-                </FieldSet>
-
-                <FieldSeparator/>
-                <FieldSet>
-                  <FieldLegend>Customer Details</FieldLegend>
-                  <FieldDescription>The details of the customer.</FieldDescription>
-                  <FieldGroup>
-                    <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                      <Field>
-                        <FieldLabel htmlFor="full_name">Full Name <span className="text-red-400 font-bold">*</span></FieldLabel>
-                        <Input name="full_name" value={fullName ?? ""} onChange={e => setFullName(e.target.value)} autoComplete="off" placeholder="e.g. John A. Doe" required />
-                        <FieldDescription>Full name of the customer.</FieldDescription>
-                      </Field>
-
-                      <Field>
-                        <FieldLabel htmlFor="phone_number">Phone Number <span className="text-red-400 font-bold">*</span></FieldLabel>
-                        <Input name="phone_number" value={phoneNumber ?? ""} onChange={e => setPhoneNumber(e.target.value)} autoComplete="off" placeholder="e.g. 091 234 5678" required />
-                        <FieldDescription>Phone number of the customer.</FieldDescription>
-                      </Field>
-                    </div>
-
-                    <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                      <Field>
-                        <FieldLabel htmlFor="facebook_account">Facebook Account <span className="text-red-400 font-bold">*</span></FieldLabel>
-                        <Input name="facebok_account" value={facebookAccount ?? ""} onChange={e => setFacebookAccount(e.target.value)} autoComplete="off" placeholder="e.g. John Doe" required />
-                        <FieldDescription>Facebook account of the customer.</FieldDescription>
-                      </Field>
-
-                      <Field>
-                        <FieldLabel htmlFor="payment_method">Payment Method <span className="text-red-400 font-bold">*</span></FieldLabel>
-                        <Select items={paymentMethodMenuItems} value={paymentMethod} onValueChange={e => setPaymentMethod(e)} required>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a Payment Method" />
-                          </SelectTrigger>
-
-                          <SelectContent alignItemWithTrigger>
-                            <SelectGroup>
-                              {paymentMethodMenuItems.map(item => (
-                                <SelectItem key={`add-booking-payment-method-item-${item.value}`} value={item.value}>
-                                  {item.label}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                        <FieldDescription>Choose the payment method of the rental.</FieldDescription>
-                      </Field>
-                    </div>
-
-                    <Field>
-                      <FieldLabel htmlFor="payment_receipt">Payment Receipt <span className="text-red-400 font-bold">*</span></FieldLabel>
-                      <FilePond name="payment_receipt"
-                                onupdatefiles={setPaymentReceipts}
-                                allowMultiple={false}
-                                acceptedFileTypes={["image/*"]}
-                                maxFileSize="10MB"
-                                className="filepond--dark"
-                                allowFileTypeValidation
-                                allowFileSizeValidation />
-                      <FieldDescription>Upload a clear photo of the receipt.</FieldDescription>
+                      <FieldDescription>The initial booking status.</FieldDescription>
                     </Field>
 
                     <Field>
-                      <FieldLabel htmlFor="drivers_license">Drivers License <span className="text-red-400 font-bold">*</span></FieldLabel>
-                      <FilePond name="drivers_license"
-                                onupdatefiles={setDriversLicense}
-                                allowMultiple={false}
-                                acceptedFileTypes={["image/*"]}
-                                maxFileSize="10MB"
-                                className="filepond--dark"
-                                allowFileTypeValidation
-                                allowFileSizeValidation />
-                      <FieldDescription>Upload a clear photo of the renters driver license.</FieldDescription>
+                      <FieldLabel htmlFor="add-payment-status">Payment Status {REQUIRED}</FieldLabel>
+                      <Select
+                        items={paymentStatusMenuItems}
+                        value={paymentStatus}
+                        onValueChange={(e) => setPaymentStatus(e)}
+                        name="payment_status"
+                        required
+                      >
+                        <SelectTrigger id="add-payment-status">
+                          <SelectValue placeholder="Select a payment status" />
+                        </SelectTrigger>
+                        <SelectContent alignItemWithTrigger>
+                          <SelectGroup>
+                            {paymentStatusMenuItems.map((item) => (
+                              <SelectItem key={`add-payment-status-${item.value}`} value={item.value}>
+                                {item.label}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <FieldDescription>The initial payment status.</FieldDescription>
                     </Field>
+                  </div>
+                </div>
 
-                    <Field>
-                      <FieldLabel htmlFor="valid_id">Valid ID <span className="text-red-400 font-bold">*</span></FieldLabel>
-                      <FilePond name="valid_id"
-                                onupdatefiles={setValidId}
-                                allowMultiple={false}
-                                acceptedFileTypes={["image/*"]}
-                                maxFileSize="10MB"
-                                className="filepond--dark"
-                                allowFileTypeValidation
-                                allowFileSizeValidation />
-                      <FieldDescription>Upload a clear photo of the renters valid ID.</FieldDescription>
-                    </Field>
-                  </FieldGroup>
-                </FieldSet>
+                {/* — Rental Details — */}
+                <div className="space-y-7">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Rental Details</p>
+                    <Separator />
+                  </div>
 
-                <FieldSeparator/>
-                <FieldSet>
-                  <FieldLegend>Delivery Details</FieldLegend>
-                  <FieldDescription>The details of the delivery.</FieldDescription>
-                  <FieldGroup>
-                    <Field>
-                      <div className="flex items-center space-x-2">
-                        <Switch name="is_delivery" checked={isDelivery} onCheckedChange={e => setIsDelivery(e)} />
-                        <Label htmlFor="is_delivery">Delivery</Label>
+                  <Field>
+                    <FieldLabel htmlFor="add-vehicle">Vehicle {REQUIRED}</FieldLabel>
+                    <Select
+                      items={vehicleMenuItems}
+                      value={vehicle}
+                      onValueChange={(e) => {
+                        setVehicle(e);
+                        const idx = vehiclesRow.findIndex((row) => row.id === e);
+                        setVehicleImagePreview(idx !== -1 ? vehiclesRow[idx].imageUrl : undefined);
+                        // Clear dates when vehicle changes
+                        setRentalDate(undefined);
+                        setRentalTime(undefined);
+                        setReturnDate(undefined);
+                        setReturnTime(undefined);
+                      }}
+                      name="vehicle"
+                      required
+                    >
+                      <SelectTrigger id="add-vehicle">
+                        <SelectValue placeholder="Select a vehicle" />
+                      </SelectTrigger>
+                      <SelectContent alignItemWithTrigger>
+                        <SelectGroup>
+                          {vehicleMenuItems.map((item) => (
+                            <SelectItem key={`add-vehicle-item-${item.value}`} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>Choose the vehicle for this rental.</FieldDescription>
+                  </Field>
+
+                  {vehicleImagePreview && (
+                    <div
+                      className="group relative w-full aspect-video rounded-xl overflow-hidden border border-border cursor-pointer"
+                      onClick={() => setImagePreview(vehicleImagePreview)}
+                    >
+                      <Image
+                        src={vehicleImagePreview}
+                        alt="Selected vehicle"
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                        fill
+                        unoptimized
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center">
+                        <ExternalLinkIcon className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-8 w-8 drop-shadow-lg" />
                       </div>
-                      <FieldDescription>Is it delivery or pick up?</FieldDescription>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <Field>
+                      <FieldLabel>Rental Date {REQUIRED}</FieldLabel>
+                      <Popover>
+                        <PopoverTrigger render={
+                          <Button
+                            variant="outline"
+                            data-empty={!rentalDate}
+                            className="w-full justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                          >
+                            {rentalDate ? format(rentalDate, "PPP") : <span>Pick a rental date</span>}
+                            <ChevronDownIcon data-icon="inline-end" />
+                          </Button>
+                        } />
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            disabled={(date) => isDateBookedForVehicle(date, activeBookings)}
+                            selected={rentalDate}
+                            onSelect={(e) => {
+                              setRentalDate(e);
+                              setRentalTime(getCurrentTimeString(e));
+                            }}
+                            defaultMonth={rentalDate}
+                            required
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FieldDescription>Start date of the rental.</FieldDescription>
                     </Field>
 
-                    <AnimatePresence>
-                      {isDelivery && (
-                        <motion.div initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1, transition: { duration: 0.3 } }}
-                                    exit={{ opacity: 0 }}>
-                          <FieldGroup>
-                            <Field>
-                              <FieldLabel htmlFor="delivery_address">Delivery Address <span className="text-red-400 font-bold">*</span></FieldLabel>
-                              <Input type="text" name="delivery_address" value={deliveryAddress ?? ""} onChange={e => setDeliveryAddress(e.target.value)} placeholder="e.g. Cebu City, Cebu, Philippines" required />
-                              <FieldDescription>Address of the delivery.</FieldDescription>
-                            </Field>
+                    <Field>
+                      <FieldLabel htmlFor="add-rental-time">Rental Time {REQUIRED}</FieldLabel>
+                      <Input
+                        id="add-rental-time"
+                        type="time"
+                        name="rental_time"
+                        value={rentalTime ?? ""}
+                        onChange={(e) => setRentalTime(e.target.value)}
+                        step="1"
+                        required
+                      />
+                      <FieldDescription>Start time of the rental.</FieldDescription>
+                    </Field>
+                  </div>
 
-                            <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                              <Field>
-                                <FieldLabel htmlFor="delivery_fee">Delivery Fee <span className="text-red-400 font-bold">*</span></FieldLabel>
-                                <Input type="number" name="delivery_fee" min={0} value={deliveryFee ?? 0} onChange={e => setDeliveryFee(Number.parseInt(e.target.value))} required />
-                                <FieldDescription>Fee of the delivery.</FieldDescription>
-                              </Field>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <Field>
+                      <FieldLabel>Return Date {REQUIRED}</FieldLabel>
+                      <Popover>
+                        <PopoverTrigger render={
+                          <Button
+                            variant="outline"
+                            data-empty={!returnDate}
+                            className="w-full justify-between text-left font-normal data-[empty=true]:text-muted-foreground"
+                          >
+                            {returnDate ? format(returnDate, "PPP") : <span>Pick a return date</span>}
+                            <ChevronDownIcon data-icon="inline-end" />
+                          </Button>
+                        } />
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            disabled={(date) =>
+                              date < (rentalDate ?? new Date()) ||
+                              isDateBookedForVehicle(date, activeBookings)
+                            }
+                            selected={returnDate}
+                            onSelect={(e) => {
+                              setReturnDate(e);
+                              setReturnTime(getCurrentTimeString(e));
+                            }}
+                            defaultMonth={returnDate}
+                            required
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FieldDescription>Return date of the rental.</FieldDescription>
+                    </Field>
 
-                              <Field>
-                                <FieldLabel htmlFor="pickup_fee">Pickup Fee <span className="text-red-400 font-bold">*</span></FieldLabel>
-                                <Input type="number" name="pickup_fee" min={0} value={pickupFee ?? 0} onChange={e => setPickupFee(Number.parseInt(e.target.value))} required />
-                                <FieldDescription>Fee of the pickup.</FieldDescription>
-                              </Field>
-                            </div>
-                          </FieldGroup>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    <Field>
+                      <FieldLabel htmlFor="add-return-time">Return Time {REQUIRED}</FieldLabel>
+                      <Input
+                        id="add-return-time"
+                        type="time"
+                        name="return_time"
+                        value={returnTime ?? ""}
+                        onChange={(e) => setReturnTime(e.target.value)}
+                        step="1"
+                        required
+                      />
+                      <FieldDescription>Return time of the rental.</FieldDescription>
+                    </Field>
+                  </div>
+                </div>
 
-                  </FieldGroup>
-                </FieldSet>
-              </FieldSet>
+                {/* — Customer Details — */}
+                <div className="space-y-7">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Customer Details</p>
+                    <Separator />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <Field>
+                      <FieldLabel htmlFor="add-full-name">Full Name {REQUIRED}</FieldLabel>
+                      <Input
+                        id="add-full-name"
+                        name="full_name"
+                        autoComplete="off"
+                        placeholder="e.g. John A. Doe"
+                        value={fullName ?? ""}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                      />
+                      <FieldDescription>Full name of the customer.</FieldDescription>
+                    </Field>
+
+                    <Field>
+                      <FieldLabel htmlFor="add-phone-number">Phone Number {REQUIRED}</FieldLabel>
+                      <Input
+                        id="add-phone-number"
+                        name="phone_number"
+                        autoComplete="off"
+                        placeholder="e.g. 0912 345 6789"
+                        value={phoneNumber ?? ""}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        required
+                      />
+                      <FieldDescription>Contact number of the customer.</FieldDescription>
+                    </Field>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <Field>
+                      <FieldLabel htmlFor="add-facebook">Facebook Account {REQUIRED}</FieldLabel>
+                      <Input
+                        id="add-facebook"
+                        name="facebook_account"
+                        autoComplete="off"
+                        placeholder="e.g. John Doe"
+                        value={facebookAccount ?? ""}
+                        onChange={(e) => setFacebookAccount(e.target.value)}
+                        required
+                      />
+                      <FieldDescription>Facebook account of the customer.</FieldDescription>
+                    </Field>
+
+                    <Field>
+                      <FieldLabel htmlFor="add-payment-method">Payment Method {REQUIRED}</FieldLabel>
+                      <Select
+                        items={paymentMethodMenuItems}
+                        value={paymentMethod}
+                        onValueChange={(e) => setPaymentMethod(e)}
+                        required
+                      >
+                        <SelectTrigger id="add-payment-method">
+                          <SelectValue placeholder="Select a payment method" />
+                        </SelectTrigger>
+                        <SelectContent alignItemWithTrigger>
+                          <SelectGroup>
+                            {paymentMethodMenuItems.map((item) => (
+                              <SelectItem key={`add-pm-item-${item.value}`} value={item.value}>
+                                {item.label}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <FieldDescription>Payment method used by the customer.</FieldDescription>
+                    </Field>
+                  </div>
+
+                  <Field>
+                    <FieldLabel>Payment Receipt {REQUIRED}</FieldLabel>
+                    <FilePond
+                      name="payment_receipt"
+                      onupdatefiles={setPaymentReceipts}
+                      allowMultiple={false}
+                      acceptedFileTypes={["image/*"]}
+                      maxFileSize="10MB"
+                      className="filepond--dark"
+                      allowFileTypeValidation
+                      allowFileSizeValidation
+                    />
+                    <FieldDescription>Upload a clear photo of the payment receipt. Max 10 MB.</FieldDescription>
+                  </Field>
+
+                  <Field>
+                    <FieldLabel>Driver&apos;s License {REQUIRED}</FieldLabel>
+                    <FilePond
+                      name="drivers_license"
+                      onupdatefiles={setDriversLicense}
+                      allowMultiple={false}
+                      acceptedFileTypes={["image/*"]}
+                      maxFileSize="10MB"
+                      className="filepond--dark"
+                      allowFileTypeValidation
+                      allowFileSizeValidation
+                    />
+                    <FieldDescription>Upload a clear photo of the renter&apos;s driver&apos;s license. Max 10 MB.</FieldDescription>
+                  </Field>
+
+                  <Field>
+                    <FieldLabel>Valid ID {REQUIRED}</FieldLabel>
+                    <FilePond
+                      name="valid_id"
+                      onupdatefiles={setValidId}
+                      allowMultiple={false}
+                      acceptedFileTypes={["image/*"]}
+                      maxFileSize="10MB"
+                      className="filepond--dark"
+                      allowFileTypeValidation
+                      allowFileSizeValidation
+                    />
+                    <FieldDescription>Upload a clear photo of the renter&apos;s valid ID. Max 10 MB.</FieldDescription>
+                  </Field>
+                </div>
+
+                {/* — Delivery Details — */}
+                <div className="space-y-7">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Delivery Details</p>
+                    <Separator />
+                  </div>
+
+                  <Field>
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        id="add-is-delivery"
+                        name="is_delivery"
+                        checked={isDelivery}
+                        onCheckedChange={(e) => setIsDelivery(e)}
+                      />
+                      <Label htmlFor="add-is-delivery">Enable Delivery</Label>
+                    </div>
+                    <FieldDescription>Toggle if the vehicle will be delivered to the customer.</FieldDescription>
+                  </Field>
+
+                  {isDelivery && (
+                    <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-5">
+                      <Field>
+                        <FieldLabel htmlFor="add-delivery-address">Delivery Address {REQUIRED}</FieldLabel>
+                        <Input
+                          id="add-delivery-address"
+                          type="text"
+                          name="delivery_address"
+                          placeholder="e.g. Cebu City, Cebu, Philippines"
+                          value={deliveryAddress ?? ""}
+                          onChange={(e) => setDeliveryAddress(e.target.value)}
+                          required
+                        />
+                        <FieldDescription>Full delivery address of the customer.</FieldDescription>
+                      </Field>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <Field>
+                          <FieldLabel htmlFor="add-delivery-fee">Delivery Fee {REQUIRED}</FieldLabel>
+                          <Input
+                            id="add-delivery-fee"
+                            type="number"
+                            name="delivery_fee"
+                            min={0}
+                            value={deliveryFee ?? 0}
+                            onChange={(e) => setDeliveryFee(Number.parseInt(e.target.value))}
+                            required
+                          />
+                          <FieldDescription>Fee for delivering the vehicle.</FieldDescription>
+                        </Field>
+
+                        <Field>
+                          <FieldLabel htmlFor="add-pickup-fee">Pickup Fee {REQUIRED}</FieldLabel>
+                          <Input
+                            id="add-pickup-fee"
+                            type="number"
+                            name="pickup_fee"
+                            min={0}
+                            value={pickupFee ?? 0}
+                            onChange={(e) => setPickupFee(Number.parseInt(e.target.value))}
+                            required
+                          />
+                          <FieldDescription>Fee for picking up the vehicle after rental.</FieldDescription>
+                        </Field>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </FieldGroup>
             </form>
           </div>
 
-          <DialogFooter className="space-x-2">
-            <DialogClose onChange={() => setOpen(false)}>Cancel</DialogClose>
-            <Button type="submit" form="add-booking-form">
-              Save{" "}{loading && <Loader2 className="animate-spin"/>}
+          <DialogFooter className="gap-2 pt-2 border-t border-border">
+            <DialogClose onClick={() => setOpen(false)}>Cancel</DialogClose>
+            <Button type="submit" form="add-booking-form" disabled={loading} className="min-w-[120px]">
+              {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Add Booking"}
             </Button>
           </DialogFooter>
         </DialogContent>
