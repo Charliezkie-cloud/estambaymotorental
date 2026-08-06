@@ -4,6 +4,7 @@ import "../globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "next-themes";
 import Navbar from "@/components/layouts/navbar";
+import { Toaster } from "@/components/ui/sonner";
 
 const robotoHeading = Roboto({subsets:['latin'],variable:'--font-heading'});
 
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <Navbar />
           </header>
           {children}
+          <Toaster position="bottom-center" />
         </ThemeProvider>
       </body>
     </html>
