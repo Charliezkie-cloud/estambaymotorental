@@ -327,7 +327,7 @@ export default function AdminEditVehicleDialog({ vehicleColors, row, onRowUpdate
         </div>
 
         <DialogFooter className="gap-2 pt-2 border-t border-border">
-          <DialogClose onClick={onCancel} variant="outline">Cancel</DialogClose>
+          <DialogClose onClick={onCancel}>Cancel</DialogClose>
           <Button type="submit" form="edit-vehicle-form" disabled={loading} className="min-w-[120px]">
             {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Save Changes"}
           </Button>
