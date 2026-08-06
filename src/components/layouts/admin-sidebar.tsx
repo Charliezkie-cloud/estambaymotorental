@@ -1,110 +1,208 @@
-import { useRouter } from "next/navigation";
-import { Banknote, Book, Car, Home, Loader2, MotorbikeIcon } from "lucide-react";
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  Bike,
+  BookOpen,
+  CreditCard,
+  LogOut,
+  Loader2,
+  ChevronRight,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
 
 import {
-  Sidebar, SidebarContent,
-  SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton,
-  SidebarMenuItem, useSidebar
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { SupabaseClient } from "@supabase/supabase-js";
 
-type LinkItem = {
+interface LinkItem {
   title: string;
   href: string;
-  icon: string | React.ReactNode;
-};
+  icon: React.ReactNode;
+  tooltip: string;
+}
 
-type Props = {
+interface Props {
   supabaseClient: SupabaseClient;
-};
+}
+
+const NAV_ITEMS: LinkItem[] = [
+  {
+    title: "Dashboard",
+    href: "/admin",
+    icon: <LayoutDashboard />,
+    tooltip: "Dashboard overview",
+  },
+  {
+    title: "Vehicles",
+    href: "/admin/vehicles",
+    icon: <Bike />,
+    tooltip: "Manage fleet vehicles",
+  },
+  {
+    title: "Bookings",
+    href: "/admin/bookings",
+    icon: <BookOpen />,
+    tooltip: "View and manage bookings",
+  },
+  {
+    title: "Payment Methods",
+    href: "/admin/payment-methods",
+    icon: <CreditCard />,
+    tooltip: "Manage payment options",
+  },
+];
 
 export default function AdminSidebar({ supabaseClient }: Props) {
-  // Hooks
   const router = useRouter();
+  const pathname = usePathname();
   const [logoutLoading, setLogoutLoading] = useState(false);
   const { setOpenMobile, isMobile } = useSidebar();
 
-  // Links
-  const link: LinkItem[] = [
-    {
-      title: "Dashboard",
-      href: "/admin",
-      icon: <Home />
-    },
-    {
-      title: "Vehicles",
-      href: "/admin/vehicles",
-      icon: <MotorbikeIcon />
-    },
-    {
-      title: "Bookings",
-      href: "/admin/bookings",
-      icon: <Book />
-    },
-    {
-      title: "Payment Methods",
-      href: "/admin/payment-methods",
-      icon: <Banknote />
-    },
-  ];
+  /**
+   * Determines the active nav item.
+   * Exact match for /admin (dashboard), prefix match for all others.
+   */
+  function isActiveLink(href: string): boolean {
+    if (href === "/admin") return pathname === "/admin";
+    return pathname.startsWith(href);
+  }
 
-  // Handlers
   async function logoutUser() {
     setLogoutLoading(true);
-
     try {
       await supabaseClient.auth.signOut();
+      router.push("/admin/login");
     } finally {
       setLogoutLoading(false);
     }
   }
 
-  function onLinkClick(link: LinkItem) {
-    router.push(link.href);
+  function onLinkClick(item: LinkItem) {
+    router.push(item.href);
     if (isMobile) setOpenMobile(false);
   }
 
   return (
-    <Sidebar>
-      {/* Header */}
-      <SidebarHeader>
+    <Sidebar collapsible="icon">
+      {/* ── Header / Branding ─────────────────────────────── */}
+      <SidebarHeader className="py-4 px-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton>
-              <Link href="/admin" className="font-heading font-semibold inline-flex justify-center gap-2">
-                <Car />
-                <span>Estambay Moto Rentals Co.</span>
-              </Link>
+            <SidebarMenuButton
+              size="lg"
+              render={<Link href="/admin" />}
+              className="gap-3 px-2"
+              tooltip="Estambay Moto Rentals"
+            >
+              {/* Logo mark */}
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                <Bike className="h-4 w-4" />
+              </span>
+
+              {/* Brand name */}
+              <div className="flex flex-col leading-none">
+                <span className="font-heading font-bold text-sm tracking-tight">
+                  Estambay Moto
+                </span>
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
+                  Rentals Co.
+                </span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
-      {/* Body */}
+      <Separator className="mb-2 opacity-50" />
+
+      {/* ── Navigation ────────────────────────────────────── */}
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Tables</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 px-3 mb-1">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {link.map((item, index) => (
-                <SidebarMenuItem key={`sidebar-menu-item-${index}`}>
-                  <SidebarMenuButton onClick={() => onLinkClick(item)}>
-                    {item.icon} {item.title}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu className="gap-0.5">
+              {NAV_ITEMS.map((item) => {
+                const active = isActiveLink(item.href);
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      onClick={() => onLinkClick(item)}
+                      isActive={active}
+                      size="default"
+                      tooltip={item.tooltip}
+                      className="group/nav-item relative h-9 px-3 rounded-lg transition-all duration-150"
+                    >
+                      <span
+                        className={
+                          active
+                            ? "text-primary"
+                            : "text-muted-foreground group-hover/nav-item:text-foreground"
+                        }
+                      >
+                        {item.icon}
+                      </span>
+                      <span className="flex-1 font-medium">{item.title}</span>
+                      {active && (
+                        <ChevronRight className="ml-auto h-3.5 w-3.5 shrink-0 text-primary opacity-70" />
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer */}
-      <SidebarFooter>
-        <Button onClick={logoutUser} variant="destructive" disabled={logoutLoading}>
-          Log out{" "}{logoutLoading && (<Loader2 className="animate-spin" />)}
+      {/* ── Footer ────────────────────────────────────────── */}
+      <Separator className="mt-2 opacity-50" />
+      <SidebarFooter className="py-3 px-3 gap-2">
+        {/* Admin badge */}
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-muted/40 group-data-[collapsible=icon]:justify-center">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <ShieldCheck className="h-3.5 w-3.5" />
+          </span>
+          <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
+            <span className="text-xs font-semibold">Administrator</span>
+            <span className="text-[10px] text-muted-foreground">Full access</span>
+          </div>
+        </div>
+
+        {/* Logout */}
+        <Button
+          onClick={logoutUser}
+          variant="outline"
+          size="sm"
+          disabled={logoutLoading}
+          className="w-full gap-2 border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors duration-150 group-data-[collapsible=icon]:px-0"
+        >
+          {logoutLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <LogOut className="h-4 w-4" />
+          )}
+          <span className="group-data-[collapsible=icon]:hidden">
+            {logoutLoading ? "Signing out…" : "Sign out"}
+          </span>
         </Button>
       </SidebarFooter>
     </Sidebar>
