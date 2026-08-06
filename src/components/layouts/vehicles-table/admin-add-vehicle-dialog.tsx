@@ -1,15 +1,32 @@
 import { Loader2, PlusIcon } from "lucide-react";
 import { FilePondFile } from "filepond";
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { FilePond } from "react-filepond";
 import { toast } from "sonner";
 
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { VehicleColorRow, VehicleRow } from "@/types/models.types";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createVehicle } from "@/lib/supabase/tables/vehicles-tables";
 
 type Props = {
@@ -22,9 +39,14 @@ type MenuItem = {
   label: string;
 };
 
+const REQUIRED = <span className="text-destructive font-bold ms-0.5">*</span>;
+
 export default function AdminAddVehicleDialog({ vehicleColors, onRowAdd }: Props) {
   // Menu items
-  const [vehicleColorMenuItems, setVehicleColorMenuItems] = useState<MenuItem[]>([]);
+  const vehicleColorMenuItems: MenuItem[] = useMemo(
+    () => vehicleColors.map((e) => ({ value: e.id, label: e.name })),
+    [vehicleColors]
+  );
   const statusMenuItems: MenuItem[] = [
     { value: 1, label: "Available" },
     { value: 2, label: "Under Maintenance" },
@@ -69,7 +91,7 @@ export default function AdminAddVehicleDialog({ vehicleColors, onRowAdd }: Props
         daily_price: dailyPrice ?? 0.00,
         half_day_price: halfDayPrice ?? 0.00,
         hourly_price: hourlyPrice ?? 0.00,
-        image: imageFile
+        image: imageFile,
       });
 
       toast.success("Vehicle Added Successfully");
@@ -77,7 +99,7 @@ export default function AdminAddVehicleDialog({ vehicleColors, onRowAdd }: Props
       onRowAdd(data);
     } catch (error) {
       toast.error("Failed to Add Vehicle", {
-        description: error instanceof Error ? error.message : String(error)
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setLoading(false);
@@ -95,24 +117,9 @@ export default function AdminAddVehicleDialog({ vehicleColors, onRowAdd }: Props
     return false;
   }
 
-  // Use effects
-  useEffect(() => {
-    function mapVehicleColorsRow() {
-      const mappedVehicleColorRows = vehicleColors.map(e => ({
-        value: e.id,
-        label: e.name
-      }));
-
-      setVehicleColorMenuItems(mappedVehicleColorRows);
-    }
-
-    mapVehicleColorsRow();
-  }, [vehicleColors]);
-
-  useEffect(() => {
-    function resetForm() {
-      if (!open) return;
-
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
+      // Reset form when opening
       setStatus(1);
       setModel(undefined);
       setColor(null);
@@ -122,123 +129,214 @@ export default function AdminAddVehicleDialog({ vehicleColors, onRowAdd }: Props
       setHourlyPrice(undefined);
       setModelImage(null);
     }
-
-    resetForm();
-  }, [open]);
+    setOpen(nextOpen);
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className="ms-auto">
-        <PlusIcon />
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger
+        render={(
+          <Button id="add-vehicle-trigger" className="ms-auto">
+            <PlusIcon className="h-4 w-4" />
+            Add Vehicle
+          </Button>
+        )}
+      />
 
-      <DialogContent showCloseButton={false}>
+      <DialogContent showCloseButton={false} className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Add Vehicle</DialogTitle>
-          <DialogDescription>Add a new vehicle.</DialogDescription>
+          <DialogDescription>Fill in the details below to register a new vehicle to your fleet.</DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-y-auto max-h-[75vh]">
+        <div className="overflow-y-auto max-h-[70vh] pe-1">
           <form id="add-vehicle-form" onSubmit={onFormSubmit}>
             <FieldSet>
               <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="color">Status <span className="text-red-400 font-bold">*</span></FieldLabel>
-                  <Select items={statusMenuItems} name="color" autoComplete="off" value={status} onValueChange={e => setStatus(e)} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a Color" />
-                    </SelectTrigger>
 
-                    <SelectContent alignItemWithTrigger>
-                      <SelectGroup>
-                        {statusMenuItems.map(item => (
-                          <SelectItem key={`add-vehicle-color-item-${item.value}`} value={item.value}>
-                            {item.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <FieldDescription>Choose the status of the unit.</FieldDescription>
-                </Field>
+                {/* — Unit Info — */}
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Unit Info</p>
+                  <Separator />
+                </div>
 
-                <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <Field>
-                    <FieldLabel htmlFor="model">Model <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="text" name="model" autoComplete="off" placeholder="e.g. ADV 160" value={model ?? ""} onChange={e => setModel(e.target.value)} required />
-                    <FieldDescription>Enter the make and model of the vehicle.</FieldDescription>
+                    <FieldLabel htmlFor="add-model">Model {REQUIRED}</FieldLabel>
+                    <Input
+                      id="add-model"
+                      type="text"
+                      name="model"
+                      autoComplete="off"
+                      placeholder="e.g. Honda ADV 160"
+                      value={model ?? ""}
+                      onChange={(e) => setModel(e.target.value)}
+                      required
+                    />
+                    <FieldDescription>Make and model of the vehicle.</FieldDescription>
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="color">Color <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Select items={vehicleColorMenuItems} name="color" autoComplete="off" value={color} onValueChange={e => setColor(e)} required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a Color" />
-                      </SelectTrigger>
+                    <FieldLabel htmlFor="add-year-model">Year Model {REQUIRED}</FieldLabel>
+                    <Input
+                      id="add-year-model"
+                      type="number"
+                      min={1900}
+                      max={new Date().getFullYear() + 1}
+                      name="year_model"
+                      autoComplete="off"
+                      placeholder={`e.g. ${new Date().getFullYear()}`}
+                      value={yearModel ?? ""}
+                      onChange={(e) => setYearModel(Number.parseInt(e.target.value))}
+                      required
+                    />
+                    <FieldDescription>Release or manufacturing year.</FieldDescription>
+                  </Field>
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <Field>
+                    <FieldLabel htmlFor="add-color">Color {REQUIRED}</FieldLabel>
+                    <Select
+                      items={vehicleColorMenuItems}
+                      name="color"
+                      autoComplete="off"
+                      value={color}
+                      onValueChange={(e) => setColor(e)}
+                      required
+                    >
+                      <SelectTrigger id="add-color">
+                        <SelectValue placeholder="Select a color" />
+                      </SelectTrigger>
                       <SelectContent alignItemWithTrigger>
                         <SelectGroup>
-                          {vehicleColorMenuItems.map(item => (
-                            <SelectItem key={`add-vehicle-color-item-${item.value}`} value={item.value}>
+                          {vehicleColorMenuItems.map((item) => (
+                            <SelectItem key={`add-color-item-${item.value}`} value={item.value}>
                               {item.label}
                             </SelectItem>
                           ))}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    <FieldDescription>Choose the primary color of the unit.</FieldDescription>
+                    <FieldDescription>Primary color of the unit.</FieldDescription>
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="add-status">Status {REQUIRED}</FieldLabel>
+                    <Select
+                      items={statusMenuItems}
+                      name="status"
+                      autoComplete="off"
+                      value={status}
+                      onValueChange={(e) => setStatus(e)}
+                      required
+                    >
+                      <SelectTrigger id="add-status">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent alignItemWithTrigger>
+                        <SelectGroup>
+                          {statusMenuItems.map((item) => (
+                            <SelectItem key={`add-status-item-${item.value}`} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>Current availability of the unit.</FieldDescription>
                   </Field>
                 </div>
 
-                <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                  <Field>
-                    <FieldLabel htmlFor="year_model">Year Model <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" min={0} name="year_model" autoComplete="off" placeholder="e.g. 2023" value={yearModel ?? 0} onChange={e => setYearModel(Number.parseInt(e.target.value))} required />
-                    <FieldDescription>The release or manufacturing year.</FieldDescription>
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="daily_price">Daily Price <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" min={0} name="daily_price" autoComplete="off" placeholder="e.g. 750.00" value={dailyPrice ?? 0} onChange={e => setDailyPrice(Number.parseInt(e.target.value))} required />
-                    <FieldDescription>Standard rate for a full 24-hour rental.</FieldDescription>
-                  </Field>
+                {/* — Pricing — */}
+                <div className="space-y-1 pt-2">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Pricing</p>
+                  <Separator />
                 </div>
 
-                <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <Field>
-                    <FieldLabel htmlFor="half_day_price">Half Day Price <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" min={0} name="half_day_price" autoComplete="off" placeholder="e.g. 300.00" value={halfDayPrice ?? 0} onChange={e => setHalfDayPrice(Number.parseInt(e.target.value))} required />
+                    <FieldLabel htmlFor="add-daily-price">Daily Price {REQUIRED}</FieldLabel>
+                    <Input
+                      id="add-daily-price"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      name="daily_price"
+                      autoComplete="off"
+                      placeholder="750.00"
+                      value={dailyPrice ?? ""}
+                      onChange={(e) => setDailyPrice(Number.parseFloat(e.target.value))}
+                      required
+                    />
+                    <FieldDescription>Rate for a full 24-hour rental.</FieldDescription>
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="add-half-day-price">Half Day Price {REQUIRED}</FieldLabel>
+                    <Input
+                      id="add-half-day-price"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      name="half_day_price"
+                      autoComplete="off"
+                      placeholder="400.00"
+                      value={halfDayPrice ?? ""}
+                      onChange={(e) => setHalfDayPrice(Number.parseFloat(e.target.value))}
+                      required
+                    />
                     <FieldDescription>Rate for up to 12 hours of use.</FieldDescription>
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="hourly_price">Hourly Price <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" min={0} name="hourly_price" autoComplete="off" placeholder="e.g. 100.00" value={hourlyPrice ?? 0} onChange={e => setHourlyPrice(Number.parseInt(e.target.value))} required />
-                    <FieldDescription>Rate charged per hour for quick rentals.</FieldDescription>
+                    <FieldLabel htmlFor="add-hourly-price">Hourly Price {REQUIRED}</FieldLabel>
+                    <Input
+                      id="add-hourly-price"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      name="hourly_price"
+                      autoComplete="off"
+                      placeholder="100.00"
+                      value={hourlyPrice ?? ""}
+                      onChange={(e) => setHourlyPrice(Number.parseFloat(e.target.value))}
+                      required
+                    />
+                    <FieldDescription>Rate charged per hour.</FieldDescription>
                   </Field>
                 </div>
 
+                {/* — Photo — */}
+                <div className="space-y-1 pt-2">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Photo</p>
+                  <Separator />
+                </div>
+
                 <Field>
-                  <FieldLabel htmlFor="vehicle_image">Image <span className="text-red-400 font-bold">*</span></FieldLabel>
-                  <FilePond name="vehicle_image"
-                            onupdatefiles={setModelImage}
-                            allowMultiple={false}
-                            acceptedFileTypes={["image/*"]}
-                            maxFileSize="10MB"
-                            allowFileTypeValidation
-                            allowFileSizeValidation
-                            className="filepond--dark" />
-                  <FieldDescription>Upload a clear photo of the actual unit.</FieldDescription>
+                  <FieldLabel htmlFor="add-vehicle-image">Vehicle Image {REQUIRED}</FieldLabel>
+                  <FilePond
+                    name="vehicle_image"
+                    onupdatefiles={setModelImage}
+                    allowMultiple={false}
+                    acceptedFileTypes={["image/*"]}
+                    maxFileSize="10MB"
+                    allowFileTypeValidation
+                    allowFileSizeValidation
+                    className="filepond--dark"
+                  />
+                  <FieldDescription>Upload a clear photo of the actual unit. Max 10 MB.</FieldDescription>
                 </Field>
+
               </FieldGroup>
             </FieldSet>
           </form>
         </div>
 
-        <DialogFooter className="space-x-2">
+        <DialogFooter className="gap-2 pt-2 border-t border-border">
           <DialogClose onClick={() => setOpen(false)}>Cancel</DialogClose>
-          <Button type="submit" form="add-vehicle-form" disabled={loading}>
-            Save{" "}{loading && (<Loader2 className="animate-spin" />)}
+          <Button type="submit" form="add-vehicle-form" disabled={loading} className="min-w-[110px]">
+            {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Add Vehicle"}
           </Button>
         </DialogFooter>
       </DialogContent>

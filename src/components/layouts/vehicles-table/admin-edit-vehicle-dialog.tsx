@@ -1,19 +1,35 @@
 import { Loader2 } from "lucide-react";
 import { FilePond } from "react-filepond";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FilePondFile } from "filepond";
 import { toast } from "sonner";
 
 import { VehicleColorRow, VehicleRow } from "@/types/models.types";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { updateVehicle } from "@/lib/supabase/tables/vehicles-tables";
 
 type Props = {
-  vehicleColors: VehicleColorRow[]
+  vehicleColors: VehicleColorRow[];
   row?: VehicleRow;
   onRowUpdate: (e: VehicleRow | null) => void;
   onCancel: () => void;
@@ -24,9 +40,14 @@ type MenuItem = {
   label: string;
 };
 
+const REQUIRED = <span className="text-destructive font-bold ms-0.5">*</span>;
+
 export default function AdminEditVehicleDialog({ vehicleColors, row, onRowUpdate, onCancel }: Props) {
   // Menu items
-  const [vehicleColorMenuItems, setVehicleColorMenuItems] = useState<MenuItem[]>([]);
+  const vehicleColorMenuItems: MenuItem[] = useMemo(
+    () => vehicleColors.map((e) => ({ value: e.id, label: e.name })),
+    [vehicleColors]
+  );
   const statusMenuItems: MenuItem[] = [
     { value: 1, label: "Available" },
     { value: 2, label: "Under Maintenance" },
@@ -67,14 +88,14 @@ export default function AdminEditVehicleDialog({ vehicleColors, row, onRowUpdate
         hourly_price: hourlyPrice ?? 0.00,
         status: status ?? 1,
         oldImage: row.image,
-          ...(modelImage && { newImage: modelImage[0].file })
+        ...(modelImage && { newImage: modelImage[0].file }),
       });
 
       toast.success("Vehicle Updated Successfully");
       onRowUpdate(data);
     } catch (error) {
       toast.error("Failed to Update Vehicle", {
-        description: error instanceof Error ? error.message : String(error)
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setLoading(false);
@@ -93,144 +114,222 @@ export default function AdminEditVehicleDialog({ vehicleColors, row, onRowUpdate
   }
 
   // Use effects
+  const prevRowRef = useRef<VehicleRow | undefined>(undefined);
   useEffect(() => {
-    function mapVehicleColorsRow() {
-      const mappedVehicleColorRows = vehicleColors.map(e => ({
-        value: e.id,
-        label: e.name
-      }));
-
-      setVehicleColorMenuItems(mappedVehicleColorRows);
-    }
-
-    mapVehicleColorsRow();
-  }, [vehicleColors]);
-
-  useEffect(() => {
-    function loadFormStates() {
-      if (!row) return;
-
+    if (!row || row === prevRowRef.current) return;
+    prevRowRef.current = row;
+    // Defer to avoid synchronous setState-in-effect
+    const timer = setTimeout(() => {
       setModel(row.model);
       setColor(row.color);
+      setStatus(row.status);
       setYearModel(row.year_model);
       setDailyPrice(row.daily_price);
       setHalfDayPrice(row.half_day_price);
       setHourlyPrice(row.hourly_price);
-    }
-
-    loadFormStates();
+      setModelImage(null);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [row]);
 
   return (
     <Dialog open={!!row}>
-      <DialogContent showCloseButton={false}>
+      <DialogContent showCloseButton={false} className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Vehicle</DialogTitle>
-          <DialogDescription>Edit {row?.model} vehicle.</DialogDescription>
+          <DialogDescription>
+            Editing <span className="font-medium text-foreground">{row?.model ?? "vehicle"}</span>. Changes will be saved immediately.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-y-auto max-h-[75vh]">
+        <div className="overflow-y-auto max-h-[70vh] pe-1">
           <form id="edit-vehicle-form" onSubmit={onFormSubmit}>
             <FieldSet>
               <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="color">Status <span className="text-red-400 font-bold">*</span></FieldLabel>
-                  <Select items={statusMenuItems} name="color" autoComplete="off" value={status} onValueChange={e => setStatus(e)} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a Color" />
-                    </SelectTrigger>
 
-                    <SelectContent alignItemWithTrigger>
-                      <SelectGroup>
-                        {statusMenuItems.map(item => (
-                          <SelectItem key={`add-vehicle-color-item-${item.value}`} value={item.value}>
-                            {item.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <FieldDescription>Choose the status of the unit.</FieldDescription>
-                </Field>
+                {/* — Unit Info — */}
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Unit Info</p>
+                  <Separator />
+                </div>
 
-                <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <Field>
-                    <FieldLabel htmlFor="model">Model <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="text" name="model" autoComplete="off" placeholder="e.g. ADV 160" value={model ?? ""} onChange={e => setModel(e.target.value)} required />
-                    <FieldDescription>Enter the make and model of the vehicle.</FieldDescription>
+                    <FieldLabel htmlFor="edit-model">Model {REQUIRED}</FieldLabel>
+                    <Input
+                      id="edit-model"
+                      type="text"
+                      name="model"
+                      autoComplete="off"
+                      placeholder="e.g. Honda ADV 160"
+                      value={model ?? ""}
+                      onChange={(e) => setModel(e.target.value)}
+                      required
+                    />
+                    <FieldDescription>Make and model of the vehicle.</FieldDescription>
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="color">Color <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Select items={vehicleColorMenuItems} name="color" autoComplete="off" value={color} onValueChange={e => setColor(e)} required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a Color" />
-                      </SelectTrigger>
+                    <FieldLabel htmlFor="edit-year-model">Year Model {REQUIRED}</FieldLabel>
+                    <Input
+                      id="edit-year-model"
+                      type="number"
+                      min={1900}
+                      max={new Date().getFullYear() + 1}
+                      name="year_model"
+                      autoComplete="off"
+                      placeholder={`e.g. ${new Date().getFullYear()}`}
+                      value={yearModel ?? ""}
+                      onChange={(e) => setYearModel(Number.parseInt(e.target.value))}
+                      required
+                    />
+                    <FieldDescription>Release or manufacturing year.</FieldDescription>
+                  </Field>
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <Field>
+                    <FieldLabel htmlFor="edit-color">Color {REQUIRED}</FieldLabel>
+                    <Select
+                      items={vehicleColorMenuItems}
+                      name="color"
+                      autoComplete="off"
+                      value={color}
+                      onValueChange={(e) => setColor(e)}
+                      required
+                    >
+                      <SelectTrigger id="edit-color">
+                        <SelectValue placeholder="Select a color" />
+                      </SelectTrigger>
                       <SelectContent alignItemWithTrigger>
                         <SelectGroup>
-                          {vehicleColorMenuItems.map(item => (
-                            <SelectItem key={`edit-vehicle-color-item-${item.value}`} value={item.value}>
+                          {vehicleColorMenuItems.map((item) => (
+                            <SelectItem key={`edit-color-item-${item.value}`} value={item.value}>
                               {item.label}
                             </SelectItem>
                           ))}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    <FieldDescription>Choose the primary color of the unit.</FieldDescription>
+                    <FieldDescription>Primary color of the unit.</FieldDescription>
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="edit-status">Status {REQUIRED}</FieldLabel>
+                    <Select
+                      items={statusMenuItems}
+                      name="status"
+                      autoComplete="off"
+                      value={status}
+                      onValueChange={(e) => setStatus(e)}
+                      required
+                    >
+                      <SelectTrigger id="edit-status">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent alignItemWithTrigger>
+                        <SelectGroup>
+                          {statusMenuItems.map((item) => (
+                            <SelectItem key={`edit-status-item-${item.value}`} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>Current availability of the unit.</FieldDescription>
                   </Field>
                 </div>
 
-                <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
+                {/* — Pricing — */}
+                <div className="space-y-1 pt-2">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Pricing</p>
+                  <Separator />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <Field>
-                    <FieldLabel htmlFor="year_model">Year Model <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" min={0} name="year_model" autoComplete="off" placeholder="e.g. 2023" value={yearModel ?? 0} onChange={e => setYearModel(Number.parseInt(e.target.value))} required />
-                    <FieldDescription>The release or manufacturing year.</FieldDescription>
+                    <FieldLabel htmlFor="edit-daily-price">Daily Price {REQUIRED}</FieldLabel>
+                    <Input
+                      id="edit-daily-price"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      name="daily_price"
+                      autoComplete="off"
+                      placeholder="750.00"
+                      value={dailyPrice ?? ""}
+                      onChange={(e) => setDailyPrice(Number.parseFloat(e.target.value))}
+                      required
+                    />
+                    <FieldDescription>Rate for 24 hours.</FieldDescription>
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="daily_price">Daily Price <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" min={0} name="daily_price" autoComplete="off" placeholder="e.g. 750.00" value={dailyPrice ?? 0} onChange={e => setDailyPrice(Number.parseInt(e.target.value))} required />
-                    <FieldDescription>Standard rate for a full 24-hour rental.</FieldDescription>
+                    <FieldLabel htmlFor="edit-half-day-price">Half Day Price {REQUIRED}</FieldLabel>
+                    <Input
+                      id="edit-half-day-price"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      name="half_day_price"
+                      autoComplete="off"
+                      placeholder="400.00"
+                      value={halfDayPrice ?? ""}
+                      onChange={(e) => setHalfDayPrice(Number.parseFloat(e.target.value))}
+                      required
+                    />
+                    <FieldDescription>Rate for up to 12 hours.</FieldDescription>
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="edit-hourly-price">Hourly Price {REQUIRED}</FieldLabel>
+                    <Input
+                      id="edit-hourly-price"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      name="hourly_price"
+                      autoComplete="off"
+                      placeholder="100.00"
+                      value={hourlyPrice ?? ""}
+                      onChange={(e) => setHourlyPrice(Number.parseFloat(e.target.value))}
+                      required
+                    />
+                    <FieldDescription>Rate per hour.</FieldDescription>
                   </Field>
                 </div>
 
-                <div className="grid grid-rows-2 grid-cols-none md:grid-rows-none md:grid-cols-2 gap-7">
-                  <Field>
-                    <FieldLabel htmlFor="half_day_price">Half Day Price <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" min={0} name="half_day_price" autoComplete="off" placeholder="e.g. 300.00" value={halfDayPrice ?? 0} onChange={e => setHalfDayPrice(Number.parseInt(e.target.value))} required />
-                    <FieldDescription>Rate for up to 12 hours of use.</FieldDescription>
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="hourly_price">Hourly Price <span className="text-red-400 font-bold">*</span></FieldLabel>
-                    <Input type="number" min={0} name="hourly_price" autoComplete="off" placeholder="e.g. 100.00" value={hourlyPrice ?? 0} onChange={e => setHourlyPrice(Number.parseInt(e.target.value))} required />
-                    <FieldDescription>Rate charged per hour for quick rentals.</FieldDescription>
-                  </Field>
+                {/* — Photo — */}
+                <div className="space-y-1 pt-2">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Photo</p>
+                  <Separator />
                 </div>
 
                 <Field>
-                  <FieldLabel htmlFor="vehicle_image">Image</FieldLabel>
-                  <FilePond name="vehicle_image"
-                            onupdatefiles={setModelImage}
-                            allowMultiple={false}
-                            acceptedFileTypes={["image/*"]}
-                            maxFileSize="10MB"
-                            allowFileTypeValidation
-                            allowFileSizeValidation
-                            className="filepond--dark" />
-                  <FieldDescription>Leave empty to keep the current image.</FieldDescription>
+                  <FieldLabel htmlFor="edit-vehicle-image">Replace Image</FieldLabel>
+                  <FilePond
+                    name="vehicle_image"
+                    onupdatefiles={setModelImage}
+                    allowMultiple={false}
+                    acceptedFileTypes={["image/*"]}
+                    maxFileSize="10MB"
+                    allowFileTypeValidation
+                    allowFileSizeValidation
+                    className="filepond--dark"
+                  />
+                  <FieldDescription>Leave empty to keep the current image. Max 10 MB.</FieldDescription>
                 </Field>
+
               </FieldGroup>
             </FieldSet>
           </form>
         </div>
 
-
-        <DialogFooter className="space-x-2">
-          <DialogClose onClick={onCancel}>Cancel</DialogClose>
-          <Button type="submit" form="edit-vehicle-form" disabled={loading}>
-            Save Changes{" "}{loading && (<Loader2 className="animate-spin" />)}
+        <DialogFooter className="gap-2 pt-2 border-t border-border">
+          <DialogClose onClick={onCancel} variant="outline">Cancel</DialogClose>
+          <Button type="submit" form="edit-vehicle-form" disabled={loading} className="min-w-[120px]">
+            {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
