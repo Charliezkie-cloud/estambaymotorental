@@ -1,4 +1,4 @@
-import { Loader2, PlusIcon } from "lucide-react";
+import { Loader2, Palette, PlusIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -31,7 +31,9 @@ export default function AdminAddColorDialog({ onRowAdd }: Props) {
 
     try {
       const data = await createVehicleColor(colorName);
-      toast.success("Vehicle Color Added Successfully");
+      toast.success("Vehicle Color Added", {
+        description: `"${colorName}" has been added successfully.`,
+      });
       setOpen(false);
       onRowAdd(data);
     }  catch (error) {
@@ -47,38 +49,73 @@ export default function AdminAddColorDialog({ onRowAdd }: Props) {
   useEffect(() => {
     function resetForm() {
       if (!open) return;
-
       setColorName("");
     }
-
     resetForm();
   }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className="ms-auto" onClick={() => setOpen(prev => !prev)}>
-        <PlusIcon />
+      <DialogTrigger render={<Button size="sm" className="gap-1.5" onClick={() => setOpen(prev => !prev)} />}>
+        <PlusIcon className="h-4 w-4" />
+        Add Color
       </DialogTrigger>
 
-      <DialogContent showCloseButton={false}>
+      <DialogContent showCloseButton={false} className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Color</DialogTitle>
-          <DialogDescription>Add a new color for vehicles.</DialogDescription>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Palette className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle>Add Vehicle Color</DialogTitle>
+              <DialogDescription className="mt-0.5">
+                Define a new color option that can be assigned to vehicles.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
+
         <form onSubmit={onFormSubmit} id="add-color-form">
           <FieldSet>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="color_name">Name <span className="text-red-400 font-bold">*</span></FieldLabel>
-                <Input type="text" name="color_name" value={colorName} onChange={e => setColorName(e.target.value)} autoComplete="off" placeholder="e.g. Red" required />
-                <FieldDescription>Enter a label for this color option.</FieldDescription>
+                <FieldLabel htmlFor="color_name">
+                  Color Name <span className="text-destructive font-bold">*</span>
+                </FieldLabel>
+                <Input
+                  id="color_name"
+                  type="text"
+                  name="color_name"
+                  value={colorName}
+                  onChange={e => setColorName(e.target.value)}
+                  autoComplete="off"
+                  placeholder="e.g. Red"
+                  required
+                  autoFocus
+                />
+                <FieldDescription>
+                  Enter a descriptive label for this color (e.g.&nbsp;"Black", "Red").
+                </FieldDescription>
               </Field>
             </FieldGroup>
           </FieldSet>
         </form>
-        <DialogFooter className="space-x-2">
-          <DialogClose onClick={() => setOpen(false)}>Cancel</DialogClose>
-          <Button type="submit" form="add-color-form" disabled={loading}>Save {loading && <Loader2 className="animate-spin" />}</Button>
+
+        <DialogFooter>
+          <DialogClose onClick={() => setOpen(false)}>
+            Cancel
+          </DialogClose>
+          <Button type="submit" form="add-color-form" disabled={loading} className="min-w-20">
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin h-4 w-4" />
+                Saving…
+              </>
+            ) : (
+              "Save Color"
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
