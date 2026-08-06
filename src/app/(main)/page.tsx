@@ -11,9 +11,12 @@ import { toast } from "sonner";
 import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
 import { getAllPaymentMethods } from "@/lib/supabase/tables/payment-methods-table";
 
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function HomePage() {
   // States
   const [vehicles, setVehicles] = useState<VehicleRow[]>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState<boolean>(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodRow[]>([]);
 
   // Use effects
@@ -22,12 +25,15 @@ export default function HomePage() {
 
     async function fetchVehicles() {
       try {
+        setIsLoadingVehicles(true);
         const data = await getAllVehicles();
         setVehicles(data ?? []);
       } catch (error) {
         toast.error("Failed to Fetch Vehicles", {
           description: error instanceof Error ? error.message : String(error)
         });
+      } finally {
+        setIsLoadingVehicles(false);
       }
     }
 
@@ -91,70 +97,93 @@ export default function HomePage() {
           </div>
 
           <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6`}>
-            {vehicles.map(e => (
-              <div key={`vehicles-item-${e.id}`} className="relative h-[600px] w-full overflow-hidden rounded-xl group">
-                <div className="absolute h-full w-full bg-white">
-                  <Image src={e.imageUrl ?? ""} alt={`${e.model} ${e.vehicle_colors?.name} Image`} loading="lazy" fill className="object-contain object-top md:object-center transition-all scale-100 group-hover:scale-110 group-active:scale-110 duration-300" />
-                  <div className="absolute h-full w-full bg-linear-to-b from-transparent to-[#051424]/80 group-hover:to-transparent group-active:to-transparent transition-colors duration-300" />
-                </div>
-
-                <div className="hidden md:flex absolute h-full w-full transition-transform duration-300 translate-y-full group-hover:translate-y-0">
-                  <div className="mt-auto w-full px-6 py-4 space-y-4 bg-[#051424]/80 backdrop-blur-sm border-t border-t-[#A88C6F]/30">
+            {isLoadingVehicles ? (
+              Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={`vehicle-skeleton-${index}`}
+                  className="relative h-[600px] w-full overflow-hidden rounded-xl bg-[#051424]/40 border border-[#A88C6F]/10 flex flex-col justify-between p-6"
+                >
+                  <Skeleton className="w-full h-72 rounded-lg bg-[#051424]" />
+                  <div className="space-y-4 mt-auto">
                     <div className="space-y-2">
-                      <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Model & Color</h3>
-                      <p className="text-[#94A3B8] duration-300 font-semibold">{e.model} - {e.vehicle_colors?.name}</p>
+                      <Skeleton className="h-4 w-1/3 bg-[#051424]" />
+                      <Skeleton className="h-6 w-2/3 bg-[#051424]" />
                     </div>
+                    <div className="flex justify-between gap-2">
+                      <Skeleton className="h-10 w-1/4 bg-[#051424]" />
+                      <Skeleton className="h-10 w-1/4 bg-[#051424]" />
+                      <Skeleton className="h-10 w-1/4 bg-[#051424]" />
+                    </div>
+                    <Skeleton className="h-10 w-full rounded-md bg-[#051424]" />
+                  </div>
+                </div>
+              ))
+            ) : (
+              vehicles.map(e => (
+                <div key={`vehicles-item-${e.id}`} className="relative h-[600px] w-full overflow-hidden rounded-xl group">
+                  <div className="absolute h-full w-full bg-white">
+                    <Image src={e.imageUrl ?? ""} alt={`${e.model} ${e.vehicle_colors?.name} Image`} loading="lazy" fill className="object-contain object-top md:object-center transition-all scale-100 group-hover:scale-110 group-active:scale-110 duration-300" />
+                    <div className="absolute h-full w-full bg-linear-to-b from-transparent to-[#051424]/80 group-hover:to-transparent group-active:to-transparent transition-colors duration-300" />
+                  </div>
 
-                    <div className="flex">
+                  <div className="hidden md:flex absolute h-full w-full transition-transform duration-300 translate-y-full group-hover:translate-y-0">
+                    <div className="mt-auto w-full px-6 py-4 space-y-4 bg-[#051424]/80 backdrop-blur-sm border-t border-t-[#A88C6F]/30">
                       <div className="space-y-2">
-                        <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Daily</h3>
-                        <p className="text-[#94A3B8] duration-300 font-semibold">{e.daily_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
+                        <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Model & Color</h3>
+                        <p className="text-[#94A3B8] duration-300 font-semibold">{e.model} - {e.vehicle_colors?.name}</p>
                       </div>
-                      <div className="space-y-2 mx-auto">
-                        <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Half Day</h3>
-                        <p className="text-[#94A3B8] duration-300 font-semibold">{e.half_day_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
+
+                      <div className="flex">
+                        <div className="space-y-2">
+                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Daily</h3>
+                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.daily_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
+                        </div>
+                        <div className="space-y-2 mx-auto">
+                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Half Day</h3>
+                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.half_day_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Hourly</h3>
+                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.hourly_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Hourly</h3>
-                        <p className="text-[#94A3B8] duration-300 font-semibold">{e.hourly_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
+
+                      <div>
+                        <Button className="w-full">Book Now</Button>
                       </div>
                     </div>
+                  </div>
 
-                    <div>
-                      <Button className="w-full">Book Now</Button>
+                  <div className="flex md:hidden absolute h-full w-full">
+                    <div className="mt-auto w-full px-6 py-4 space-y-4 bg-[#051424]/80 backdrop-blur-2xl border-t border-t-[#A88C6F]/30">
+                      <div className="space-y-2">
+                        <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Model & Color</h3>
+                        <p className="text-[#94A3B8] duration-300 font-semibold">{e.model} - {e.vehicle_colors?.name}</p>
+                      </div>
+
+                      <div className="flex">
+                        <div className="space-y-2">
+                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Daily</h3>
+                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.daily_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
+                        </div>
+                        <div className="space-y-2 mx-auto">
+                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Half Day</h3>
+                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.half_day_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Hourly</h3>
+                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.hourly_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Button className="w-full">Book Now</Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex md:hidden absolute h-full w-full">
-                  <div className="mt-auto w-full px-6 py-4 space-y-4 bg-[#051424]/80 backdrop-blur-2xl border-t border-t-[#A88C6F]/30">
-                    <div className="space-y-2">
-                      <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Model & Color</h3>
-                      <p className="text-[#94A3B8] duration-300 font-semibold">{e.model} - {e.vehicle_colors?.name}</p>
-                    </div>
-
-                    <div className="flex">
-                      <div className="space-y-2">
-                        <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Daily</h3>
-                        <p className="text-[#94A3B8] duration-300 font-semibold">{e.daily_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
-                      </div>
-                      <div className="space-y-2 mx-auto">
-                        <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Half Day</h3>
-                        <p className="text-[#94A3B8] duration-300 font-semibold">{e.half_day_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Hourly</h3>
-                        <p className="text-[#94A3B8] duration-300 font-semibold">{e.hourly_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Button className="w-full">Book Now</Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
