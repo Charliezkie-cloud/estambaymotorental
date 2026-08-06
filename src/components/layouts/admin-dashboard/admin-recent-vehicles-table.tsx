@@ -95,11 +95,11 @@ export default function AdminRecentVehiclesTable() {
                 </TableCell>
                 <TableCell className="text-center">
                   {item.status === 1 ? (
-                    <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25">
+                    <Badge variant="default">
                       Available
                     </Badge>
                   ) : (
-                    <Badge className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/25">
+                    <Badge variant="destructive">
                       Maintenance
                     </Badge>
                   )}

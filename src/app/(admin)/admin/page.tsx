@@ -136,7 +136,7 @@ export default function AdminDashboardPage() {
             <Card className="lg:col-span-4 border border-border/60 shadow-sm overflow-hidden flex flex-col">
               <CardHeader className="p-5 pb-3 border-b border-border/40 flex flex-row items-center justify-between space-y-0">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
                     <ReceiptText className="w-4 h-4" />
                   </div>
                   <div>
@@ -160,7 +160,7 @@ export default function AdminDashboardPage() {
             <Card className="lg:col-span-2 border border-border/60 shadow-sm overflow-hidden flex flex-col">
               <CardHeader className="p-5 pb-3 border-b border-border/40 flex flex-row items-center justify-between space-y-0">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
                     <Bike className="w-4 h-4" />
                   </div>
                   <div>

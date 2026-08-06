@@ -73,13 +73,13 @@ export default function AdminDashboardCards() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 w-full">
       {/* Total Active Vehicles */}
-      <Card className="relative overflow-hidden border border-border/60 bg-gradient-to-br from-card via-card to-emerald-500/5 hover:border-emerald-500/30 transition-all duration-300 shadow-sm hover:shadow-md group">
+      <Card className="relative overflow-hidden border border-border/60 bg-card hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md group">
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Active Vehicles
             </span>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform duration-300">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
               <Bike className="w-5 h-5" />
             </div>
           </div>
@@ -87,7 +87,7 @@ export default function AdminDashboardCards() {
             {totalActiveVehicles !== undefined ? (
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold font-heading tracking-tight">{totalActiveVehicles}</span>
-                <span className="text-xs text-emerald-500 font-medium inline-flex items-center gap-1">
+                <span className="text-xs text-primary font-medium inline-flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" /> Operational
                 </span>
               </div>
@@ -100,13 +100,13 @@ export default function AdminDashboardCards() {
       </Card>
 
       {/* Rented This Month */}
-      <Card className="relative overflow-hidden border border-border/60 bg-gradient-to-br from-card via-card to-blue-500/5 hover:border-blue-500/30 transition-all duration-300 shadow-sm hover:shadow-md group">
+      <Card className="relative overflow-hidden border border-border/60 bg-card hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md group">
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Rented This Month
             </span>
-            <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500 group-hover:scale-110 transition-transform duration-300">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
               <CalendarCheck className="w-5 h-5" />
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function AdminDashboardCards() {
             {vehicleRentedMonth !== undefined ? (
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold font-heading tracking-tight">{vehicleRentedMonth}</span>
-                <span className="text-xs text-blue-500 font-medium">{currentMonthName}</span>
+                <span className="text-xs text-muted-foreground font-medium">{currentMonthName}</span>
               </div>
             ) : (
               <Skeleton className="h-8 w-24 rounded-md" />
@@ -125,13 +125,13 @@ export default function AdminDashboardCards() {
       </Card>
 
       {/* Occupancy Rate */}
-      <Card className="relative overflow-hidden border border-border/60 bg-gradient-to-br from-card via-card to-purple-500/5 hover:border-purple-500/30 transition-all duration-300 shadow-sm hover:shadow-md group">
+      <Card className="relative overflow-hidden border border-border/60 bg-card hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md group">
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Occupancy Rate
             </span>
-            <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-500 group-hover:scale-110 transition-transform duration-300">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
               <TrendingUp className="w-5 h-5" />
             </div>
           </div>
@@ -143,7 +143,7 @@ export default function AdminDashboardCards() {
                 </span>
                 <div className="w-full bg-secondary h-1.5 rounded-full mt-2.5 overflow-hidden">
                   <div 
-                    className="bg-purple-500 h-full rounded-full transition-all duration-500"
+                    className="bg-primary h-full rounded-full transition-all duration-500"
                     style={{ width: `${occupancyPercent}%` }}
                   />
                 </div>
@@ -157,13 +157,13 @@ export default function AdminDashboardCards() {
       </Card>
 
       {/* Overall Income */}
-      <Card className="relative overflow-hidden border border-border/60 bg-gradient-to-br from-card via-card to-amber-500/5 hover:border-amber-500/30 transition-all duration-300 shadow-sm hover:shadow-md group">
+      <Card className="relative overflow-hidden border border-border/60 bg-card hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md group">
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Overall Income
             </span>
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform duration-300">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
               <Wallet className="w-5 h-5" />
             </div>
           </div>

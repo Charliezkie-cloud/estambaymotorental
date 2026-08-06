@@ -37,9 +37,9 @@ export default function AdminRecentBookingsTable() {
   const renderPaymentStatusBadge = (status: number) => {
     switch (status) {
       case 1:
-        return <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25">Paid</Badge>;
+        return <Badge variant="default">Paid</Badge>;
       case 2:
-        return <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25">Partially Paid</Badge>;
+        return <Badge variant="secondary">Partially Paid</Badge>;
       case 3:
       default:
         return <Badge variant="outline" className="text-muted-foreground border-border">Pending</Badge>;
@@ -49,17 +49,17 @@ export default function AdminRecentBookingsTable() {
   const renderBookingStatusBadge = (status: number) => {
     switch (status) {
       case 1:
-        return <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25">Completed</Badge>;
+        return <Badge variant="default">Completed</Badge>;
       case 2:
-        return <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25">Change Unit</Badge>;
+        return <Badge variant="secondary">Change Unit</Badge>;
       case 3:
-        return <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500/25">Reserved</Badge>;
+        return <Badge variant="outline">Reserved</Badge>;
       case 4:
-        return <Badge className="bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 hover:bg-purple-500/25">Rescheduled</Badge>;
+        return <Badge variant="outline">Rescheduled</Badge>;
       case 5:
-        return <Badge className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/25">Cancelled</Badge>;
+        return <Badge variant="destructive">Cancelled</Badge>;
       case 6:
-        return <Badge className="bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/25">On Going</Badge>;
+        return <Badge variant="secondary">On Going</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }

@@ -12,11 +12,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Configs
 const incomeChartConfig = {
-  total: { label: "Revenue", color: "#f43f5e" },
+  total: { label: "Revenue", color: "var(--primary)" },
 } satisfies ChartConfig;
 
 const monthlyBookingChartConfig = {
-  total_bookings: { label: "Bookings", color: "#3b82f6" }
+  total_bookings: { label: "Bookings", color: "var(--primary)" }
 } satisfies ChartConfig;
 
 export default function AdminDashboardCharts() {
@@ -68,14 +68,14 @@ export default function AdminDashboardCharts() {
         <CardHeader className="p-5 pb-2 flex flex-row items-center justify-between space-y-0">
           <div>
             <CardTitle className="text-lg font-bold font-heading flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-rose-500" />
+              <DollarSign className="w-5 h-5 text-primary" />
               Income Per Vehicle
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground mt-0.5">
               Revenue distribution across fleet models
             </CardDescription>
           </div>
-          <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500">
+          <div className="p-2 rounded-lg bg-primary/10 text-primary">
             <TrendingUp className="w-4 h-4" />
           </div>
         </CardHeader>
@@ -99,8 +99,8 @@ export default function AdminDashboardCharts() {
               <BarChart data={vehiclesIncomeData} accessibilityLayer margin={{ top: 25, right: 10, left: 10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f43f5e" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#e11d48" stopOpacity={0.6} />
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={1} />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.5} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
@@ -139,14 +139,14 @@ export default function AdminDashboardCharts() {
         <CardHeader className="p-5 pb-2 flex flex-row items-center justify-between space-y-0">
           <div>
             <CardTitle className="text-lg font-bold font-heading flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-500" />
+              <Calendar className="w-5 h-5 text-primary" />
               Monthly Bookings
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground mt-0.5">
               Total customer bookings breakdown by month
             </CardDescription>
           </div>
-          <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+          <div className="p-2 rounded-lg bg-primary/10 text-primary">
             <BarChart3 className="w-4 h-4" />
           </div>
         </CardHeader>
@@ -169,8 +169,8 @@ export default function AdminDashboardCharts() {
               <BarChart data={monthlyBookingData} accessibilityLayer margin={{ top: 25, right: 10, left: 10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="bookingsGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#2563eb" stopOpacity={0.6} />
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={1} />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.5} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
