@@ -38,6 +38,7 @@ import {
 } from "@/lib/data/menu-items-data";
 import { getCurrentTimeString, getDaysBetween } from "@/lib/helpers/datetime-helpers";
 import { createBooking } from "@/lib/supabase/tables/bookings-table";
+import { checkBookingConflict } from "@/lib/helpers/booking-availability-helpers";
 import Image from "next/image";
 import Lightbox from "yet-another-react-lightbox";
 
@@ -115,6 +116,24 @@ export default function AdminAddBookingDialog({ bookingsRow, vehiclesRow, paymen
     }
 
     try {
+      // Double booking conflict validation
+      if (vehicle && rentalDate && rentalTime && returnDate && returnTime) {
+        const conflictResult = checkBookingConflict(
+          vehicle,
+          rentalDate,
+          rentalTime,
+          returnDate,
+          returnTime,
+          bookingsRow
+        );
+        if (conflictResult.hasConflict) {
+          toast.error("Double Booking Conflict", {
+            description: conflictResult.message
+          });
+          return setLoading(false);
+        }
+      }
+
       const dateNow = new Date();
       const numberOfDaysRent = getDaysBetween(rentalDate ?? dateNow, returnDate ?? dateNow);
       const foundVehiclesIndex = vehiclesRow.findIndex(e => e.id === vehicle);

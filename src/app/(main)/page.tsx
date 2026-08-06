@@ -12,12 +12,40 @@ import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
 import { getAllPaymentMethods } from "@/lib/supabase/tables/payment-methods-table";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { CustomerBookingDialog } from "@/components/layouts/customer-booking-dialog";
+
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
+import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
+import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
+
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
+import "filepond/dist/filepond.min.css";
+import "yet-another-react-lightbox/styles.css";
+import { registerPlugin } from "react-filepond";
+
+// Register filepond plugins
+registerPlugin(
+  FilePondPluginImagePreview,
+  FilePondPluginFileValidateType,
+  FilePondPluginFileValidateSize
+);
 
 export default function HomePage() {
   // States
   const [vehicles, setVehicles] = useState<VehicleRow[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState<boolean>(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodRow[]>([]);
+  const [isBookingOpen, setIsBookingOpen] = useState<boolean>(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
+
+  const handleOpenBooking = (vehicleId?: number) => {
+    if (vehicleId) {
+      setSelectedVehicleId(vehicleId);
+    } else {
+      setSelectedVehicleId(null);
+    }
+    setIsBookingOpen(true);
+  };
 
   // Use effects
   useEffect(() => {
@@ -76,7 +104,7 @@ export default function HomePage() {
               </h1>
               <p className="text-[#94A3B8]">Skip the last-minute headache of finding a ride. Reserve your vehicle ahead of time with Estambay Auto Moto Rentals and just focus on the trip.
               </p>
-              <Button className="px-6">Book a Motorcycle Now</Button>
+              <Button className="px-6" onClick={() => handleOpenBooking()}>Book a Motorcycle Now</Button>
             </div>
           </div>
 
@@ -149,7 +177,7 @@ export default function HomePage() {
                       </div>
 
                       <div>
-                        <Button className="w-full">Book Now</Button>
+                        <Button className="w-full" onClick={() => handleOpenBooking(e.id)}>Book Now</Button>
                       </div>
                     </div>
                   </div>
@@ -177,7 +205,7 @@ export default function HomePage() {
                       </div>
 
                       <div>
-                        <Button className="w-full">Book Now</Button>
+                        <Button className="w-full" onClick={() => handleOpenBooking(e.id)}>Book Now</Button>
                       </div>
                     </div>
                   </div>
@@ -188,6 +216,13 @@ export default function HomePage() {
         </div>
       </section>
 
+      <CustomerBookingDialog
+        open={isBookingOpen}
+        onOpenChange={setIsBookingOpen}
+        vehicles={vehicles}
+        paymentMethods={paymentMethods}
+        selectedVehicleId={selectedVehicleId}
+      />
     </main>
   )
 }
