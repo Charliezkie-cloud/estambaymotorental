@@ -1,11 +1,27 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Clock, Dot, Mail, MapPin, Phone } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight, Dot, Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
+
 import heroImage from "@/public/hero-image.jpg";
+import heroImage2 from "@/public/hero-image-2.jpg";
+import heroImage3 from "@/public/hero-image-3.jpg";
+import heroImage4 from "@/public/hero-image-4.jpg";
+
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+// ─── Hero Slides ───────────────────────────────────────────────────────────
+// To add more slides, push additional entries to this array.
+// Each entry needs a `src` (static import or URL string) and an `alt` string.
+const HERO_SLIDES = [
+  { src: heroImage, alt: "Estambay Moto Rentals – Hero Image" },
+  { src: heroImage2, alt: "Estambay Moto Rentals – Hero Image 2" },
+  { src: heroImage3, alt: "Estambay Moto Rentals – Hero Image 3" },
+  { src: heroImage4, alt: "Estambay Moto Rentals – Hero Image 4" },
+];
+const SLIDE_INTERVAL_MS = 5000;
 import { PaymentMethodRow, VehicleRow } from "@/types/models.types";
 import { toast } from "sonner";
 import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
@@ -31,12 +47,19 @@ registerPlugin(
 );
 
 export default function HomePage() {
-  // States
+  // ── Vehicle & booking states ──────────────────────────────────────────────
   const [vehicles, setVehicles] = useState<VehicleRow[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState<boolean>(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodRow[]>([]);
   const [isBookingOpen, setIsBookingOpen] = useState<boolean>(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<"all" | "available" | "maintenance">("all");
+
+  const filteredVehicles = vehicles.filter(v => {
+    if (selectedFilter === "available") return v.status === 1;
+    if (selectedFilter === "maintenance") return v.status === 2;
+    return true;
+  });
 
   const handleOpenBooking = (vehicleId?: number) => {
     if (vehicleId) {
@@ -46,6 +69,36 @@ export default function HomePage() {
     }
     setIsBookingOpen(true);
   };
+
+  // ── Hero slider states ────────────────────────────────────────────────────
+  const [currentSlide, setCurrentSlide] = useState<number>(0);
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+  const autoPlayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const totalSlides = HERO_SLIDES.length;
+
+  const goToSlide = useCallback((index: number) => {
+    if (isTransitioning || index === currentSlide) return;
+    setIsTransitioning(true);
+    setCurrentSlide(index);
+    setTimeout(() => setIsTransitioning(false), 700);
+  }, [isTransitioning, currentSlide]);
+
+  const goToPrev = useCallback(() => {
+    goToSlide((currentSlide - 1 + totalSlides) % totalSlides);
+  }, [currentSlide, totalSlides, goToSlide]);
+
+  const goToNext = useCallback(() => {
+    goToSlide((currentSlide + 1) % totalSlides);
+  }, [currentSlide, totalSlides, goToSlide]);
+
+  // Auto-play: only active when there are multiple slides
+  useEffect(() => {
+    if (totalSlides <= 1) return;
+    autoPlayRef.current = setTimeout(goToNext, SLIDE_INTERVAL_MS);
+    return () => {
+      if (autoPlayRef.current) clearTimeout(autoPlayRef.current);
+    };
+  }, [currentSlide, totalSlides, goToNext]);
 
   // Use effects
   useEffect(() => {
@@ -93,10 +146,10 @@ export default function HomePage() {
         <div className="flex flex-col-reverse md:grid md:grid-rows-none md:grid-cols-2 gap-6">
           <div className="flex">
             <div className="my-auto space-y-6">
-              <Badge className="uppercase font-heading bg-[#3B5E43]/20 text-[#A9D0AE] p-4" variant="secondary">
-              <span className="tracking-widest flex items-center">
-                Open Now{" "}<Dot/>{" "}24/7
-              </span>
+              <Badge className="uppercase font-heading bg-[#3B5E43]/20 text-[#A9D0AE] p-3" variant="secondary">
+                <span className="tracking-widest flex items-center">
+                  Open Now <Dot /> 24/7 Service
+                </span>
               </Badge>
 
               <h1 className="font-heading font-extrabold text-2xl md:text-6xl">
@@ -108,30 +161,114 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div>
-            <div className="relative overflow-hidden rounded-xl h-[600px] w-full group shadow-2xl">
-              <Image src={heroImage} alt="Hero Image" className="absolute object-cover" fill />
-              <div className="absolute h-full w-full bg-linear-to-b from-transparent to-[#051424]/80 group-active:to-[#051424]/40 group-hover:to-[#051424]/40 transition-colors duration-300" />
-            </div>
+          {/* ── Hero Image Slider ─────────────────────────────────────────── */}
+          <div className="relative overflow-hidden rounded-xl h-[600px] w-full shadow-2xl group">
+
+            {/* Slides */}
+            {HERO_SLIDES.map((slide, idx) => (
+              <div
+                key={idx}
+                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                  idx === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
+                }`}
+              >
+                <Image
+                  src={slide.src}
+                  alt={slide.alt}
+                  fill
+                  priority={idx === 0}
+                  className="object-cover"
+                />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-linear-to-b from-transparent to-[#051424]/80 group-hover:to-[#051424]/40 transition-colors duration-300" />
+              </div>
+            ))}
+
+            {/* Arrow navigation – only shown when there are multiple slides */}
+            {totalSlides > 1 && (
+              <>
+                <button
+                  onClick={goToPrev}
+                  aria-label="Previous slide"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-[#051424]/60 border border-[#A88C6F]/30 text-white hover:bg-[#051424]/90 hover:border-[#A88C6F]/60 active:scale-95 transition-all duration-200 backdrop-blur-sm"
+                >
+                  <ChevronLeft className="size-5" />
+                </button>
+                <button
+                  onClick={goToNext}
+                  aria-label="Next slide"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-[#051424]/60 border border-[#A88C6F]/30 text-white hover:bg-[#051424]/90 hover:border-[#A88C6F]/60 active:scale-95 transition-all duration-200 backdrop-blur-sm"
+                >
+                  <ChevronRight className="size-5" />
+                </button>
+              </>
+            )}
+
+            {/* Dot indicators – only shown when there are multiple slides */}
+            {totalSlides > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+                {HERO_SLIDES.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => goToSlide(idx)}
+                    aria-label={`Go to slide ${idx + 1}`}
+                    className={`rounded-full transition-all duration-300 ${
+                      idx === currentSlide
+                        ? "w-6 h-2.5 bg-primary"
+                        : "w-2.5 h-2.5 bg-white/40 hover:bg-white/70"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      <section className="bg-[#010F1F] py-12">
-        <div className="max-w-7xl mx-4 sm:mx-6 md:mx-8 lg:mx-10 xl:mx-auto space-y-6">
-          <div className="space-y-4">
-            <h2 className="font-heading text-2xl md:text-4xl font-extrabold">Vehicles</h2>
-            <p className="text-[#94A3B8]">Check out what we’re driving. Browse cars and bikes.</p>
+      <section id="vehicles" className="bg-[#010F1F] py-12 scroll-mt-20">
+        <div className="max-w-7xl mx-4 sm:mx-6 md:mx-8 lg:mx-10 xl:mx-auto space-y-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="space-y-2">
+              <h2 className="font-heading text-2xl md:text-4xl font-extrabold text-white">Vehicles</h2>
+              <p className="text-[#94A3B8]">Check out our available fleet. Browse cars and bikes built for your trip.</p>
+            </div>
+            {/* Filter buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant={selectedFilter === "all" ? "default" : "outline"}
+                className={selectedFilter !== "all" ? "border-[#A88C6F]/30 text-[#94A3B8] hover:text-white" : ""}
+                onClick={() => setSelectedFilter("all")}
+              >
+                All Fleet ({vehicles.length})
+              </Button>
+              <Button
+                size="sm"
+                variant={selectedFilter === "available" ? "default" : "outline"}
+                className={selectedFilter !== "available" ? "border-[#A88C6F]/30 text-[#94A3B8] hover:text-white" : ""}
+                onClick={() => setSelectedFilter("available")}
+              >
+                Available ({vehicles.filter(v => v.status === 1).length})
+              </Button>
+              <Button
+                size="sm"
+                variant={selectedFilter === "maintenance" ? "default" : "outline"}
+                className={selectedFilter !== "maintenance" ? "border-[#A88C6F]/30 text-[#94A3B8] hover:text-white" : ""}
+                onClick={() => setSelectedFilter("maintenance")}
+              >
+                Maintenance ({vehicles.filter(v => v.status === 2).length})
+              </Button>
+            </div>
           </div>
 
-          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoadingVehicles ? (
               Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={`vehicle-skeleton-${index}`}
-                  className="relative h-[600px] w-full overflow-hidden rounded-xl bg-[#051424]/40 border border-[#A88C6F]/10 flex flex-col justify-between p-6"
+                  className="relative h-[540px] w-full overflow-hidden rounded-xl bg-[#051424]/40 border border-[#A88C6F]/10 flex flex-col justify-between p-6"
                 >
-                  <Skeleton className="w-full h-72 rounded-lg bg-[#051424]" />
+                  <Skeleton className="w-full h-64 rounded-lg bg-[#051424]" />
                   <div className="space-y-4 mt-auto">
                     <div className="space-y-2">
                       <Skeleton className="h-4 w-1/3 bg-[#051424]" />
@@ -146,77 +283,103 @@ export default function HomePage() {
                   </div>
                 </div>
               ))
+            ) : filteredVehicles.length === 0 ? (
+              <div className="col-span-full py-16 text-center space-y-3 bg-[#051424]/30 rounded-xl border border-[#A88C6F]/10">
+                <p className="text-white font-semibold text-lg">No vehicles found</p>
+                <p className="text-[#94A3B8]">Try selecting a different filter category.</p>
+              </div>
             ) : (
-              vehicles.map(e => (
-                <div key={`vehicles-item-${e.id}`} className="relative h-[600px] w-full overflow-hidden rounded-xl group">
-                  <div className="absolute h-full w-full bg-white">
-                    <Image src={e.imageUrl ?? ""} alt={`${e.model} ${e.vehicle_colors?.name} Image`} loading="lazy" fill className="object-contain object-top md:object-center transition-all scale-100 group-hover:scale-110 group-active:scale-110 duration-300" />
-                    <div className="absolute h-full w-full bg-linear-to-b from-transparent to-[#051424]/80 group-hover:to-transparent group-active:to-transparent transition-colors duration-300" />
-                  </div>
+              filteredVehicles.map(e => {
+                const isAvailable = e.status === 1;
+                return (
+                  <div
+                    key={`vehicles-item-${e.id}`}
+                    className="group relative flex flex-col justify-between rounded-xl overflow-hidden bg-[#051424]/60 border border-[#A88C6F]/20 hover:border-[#A88C6F]/50 transition-all duration-300 shadow-xl"
+                  >
+                    {/* Top Header / Image Container */}
+                    <div className="relative h-64 w-full bg-white/95 overflow-hidden">
+                      <Image
+                        src={e.imageUrl ?? ""}
+                        alt={`${e.model} ${e.vehicle_colors?.name} Image`}
+                        loading="lazy"
+                        fill
+                        className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                      />
 
-                  <div className="hidden md:flex absolute h-full w-full transition-transform duration-300 translate-y-full group-hover:translate-y-0">
-                    <div className="mt-auto w-full px-6 py-4 space-y-4 bg-[#051424]/80 backdrop-blur-sm border-t border-t-[#A88C6F]/30">
-                      <div className="space-y-2">
-                        <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Model & Color</h3>
-                        <p className="text-[#94A3B8] duration-300 font-semibold">{e.model} - {e.vehicle_colors?.name}</p>
-                      </div>
+                      {/* Status & Year Badges Overlay */}
+                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+                        <Badge
+                          className={`font-semibold px-2.5 py-1 text-xs border ${
+                            isAvailable
+                              ? "bg-[#3B5E43]/90 text-[#A9D0AE] border-[#3B5E43]"
+                              : "bg-amber-950/90 text-amber-300 border-amber-800"
+                          }`}
+                        >
+                          {isAvailable ? "Available" : "Maintenance"}
+                        </Badge>
 
-                      <div className="flex">
-                        <div className="space-y-2">
-                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Daily</h3>
-                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.daily_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
-                        </div>
-                        <div className="space-y-2 mx-auto">
-                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Half Day</h3>
-                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.half_day_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
-                        </div>
-                        <div className="space-y-2">
-                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Hourly</h3>
-                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.hourly_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <Button className="w-full" onClick={() => handleOpenBooking(e.id)}>Book Now</Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex md:hidden absolute h-full w-full">
-                    <div className="mt-auto w-full px-6 py-4 space-y-4 bg-[#051424]/80 backdrop-blur-2xl border-t border-t-[#A88C6F]/30">
-                      <div className="space-y-2">
-                        <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Model & Color</h3>
-                        <p className="text-[#94A3B8] duration-300 font-semibold">{e.model} - {e.vehicle_colors?.name}</p>
-                      </div>
-
-                      <div className="flex">
-                        <div className="space-y-2">
-                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Daily</h3>
-                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.daily_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
-                        </div>
-                        <div className="space-y-2 mx-auto">
-                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Half Day</h3>
-                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.half_day_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
-                        </div>
-                        <div className="space-y-2">
-                          <h3 className="text-white duration-300 font-heading font-extrabold uppercase tracking-wider md:text-lg">Hourly</h3>
-                          <p className="text-[#94A3B8] duration-300 font-semibold">{e.hourly_price.toLocaleString("en-PH", { style: "currency", currency: "PHP" })}</p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <Button className="w-full" onClick={() => handleOpenBooking(e.id)}>Book Now</Button>
+                        {e.year_model && (
+                          <Badge variant="secondary" className="bg-[#051424]/80 text-[#94A3B8] border border-[#A88C6F]/20 text-xs">
+                            {e.year_model}
+                          </Badge>
+                        )}
                       </div>
                     </div>
+
+                    {/* Content Section */}
+                    <div className="p-5 flex flex-col justify-between flex-1 space-y-4">
+                      {/* Model & Color */}
+                      <div className="space-y-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <h3 className="text-white font-heading font-extrabold text-lg uppercase tracking-wide">
+                            {e.model}
+                          </h3>
+                        </div>
+                        <p className="text-[#94A3B8] text-sm font-medium">
+                          Color: <span className="text-white">{e.vehicle_colors?.name ?? "Standard"}</span>
+                        </p>
+                      </div>
+
+                      {/* Pricing Breakdown Grid */}
+                      <div className="grid grid-cols-3 gap-2 py-3 px-3 rounded-lg bg-[#010F1F]/60 border border-[#A88C6F]/15">
+                        <div className="text-center">
+                          <span className="block text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">Daily</span>
+                          <span className="text-xs sm:text-sm font-semibold text-white">
+                            {e.daily_price.toLocaleString("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 })}
+                          </span>
+                        </div>
+                        <div className="text-center border-x border-[#A88C6F]/15 px-1">
+                          <span className="block text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">Half Day</span>
+                          <span className="text-xs sm:text-sm font-semibold text-white">
+                            {e.half_day_price.toLocaleString("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 })}
+                          </span>
+                        </div>
+                        <div className="text-center">
+                          <span className="block text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">Hourly</span>
+                          <span className="text-xs sm:text-sm font-semibold text-white">
+                            {e.hourly_price.toLocaleString("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 })}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <Button
+                        className="w-full font-semibold"
+                        disabled={!isAvailable}
+                        onClick={() => handleOpenBooking(e.id)}
+                      >
+                        {isAvailable ? "Book Now" : "Unavailable"}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
       </section>
 
-      <section className="max-w-7xl mx-4 sm:mx-6 md:mx-8 lg:mx-10 xl:mx-auto py-12">
+      <section id="location" className="max-w-7xl mx-4 sm:mx-6 md:mx-8 lg:mx-10 xl:mx-auto py-12 scroll-mt-20">
         <div className="space-y-6">
           <div className="space-y-2">
             <h2 className="font-heading text-2xl md:text-4xl font-extrabold">
@@ -238,7 +401,7 @@ export default function HomePage() {
                     </span>
                   </Badge>
                   <h3 className="font-heading text-xl md:text-2xl font-bold text-white">
-                    Estambay Moto Rentals Hub
+                    Estambay Moto Rentals
                   </h3>
                 </div>
 
