@@ -80,6 +80,7 @@ export function CustomerBookingDialog({
   useEffect(() => {
     if (open) {
       if (selectedVehicleId) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setVehicleId(selectedVehicleId);
       }
       async function fetchBookingsData() {
@@ -243,8 +244,8 @@ export function CustomerBookingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-6 overflow-hidden" showCloseButton={false}>
-        <DialogHeader className="space-y-3 pb-2 border-b border-border">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-6 overflow-hidden">
+        <DialogHeader className="space-y-3 pb-2 border-b border-border mt-8">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-heading font-extrabold">Book Your Ride</DialogTitle>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -583,7 +584,7 @@ export function CustomerBookingDialog({
                 <FieldDescription>Choose how you want to pay for the reservation.</FieldDescription>
               </Field>
 
-              {selectedPaymentMethod && selectedPaymentMethod.qr_code_image_url && (
+              {selectedPaymentMethod && (selectedPaymentMethod.qr_code_image && selectedPaymentMethod.qr_code_image_url) && (
                 <div className="flex flex-col items-center justify-center py-2 space-y-2">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Scan QR Code to Pay ({selectedPaymentMethod.name})
@@ -591,14 +592,14 @@ export function CustomerBookingDialog({
                   <button
                     type="button"
                     onClick={() => setQrLightboxOpen(true)}
-                    className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-lg overflow-hidden cursor-pointer group focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="relative w-64 h-64 sm:w-96 sm:h-96 rounded-lg overflow-hidden cursor-pointer group focus:outline-none focus:ring-2 focus:ring-primary"
                     title="Click or tap the image to go full screen"
                   >
                     <Image
                       src={selectedPaymentMethod.qr_code_image_url}
                       alt={`${selectedPaymentMethod.name} QR Code`}
                       fill
-                      className="object-contain transition-transform duration-200 group-hover:scale-105"
+                      className="object-cover transition-transform duration-200 group-hover:scale-105"
                       unoptimized
                     />
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-medium">

@@ -28,6 +28,20 @@ export async function deleteFromBucket(bucket: string, filepaths: string[]): Pro
   if (error) throw error;
 }
 
+export async function existsInBucket(bucket: string, filepath: string): Promise<boolean> {
+  const { data, error } = await supabaseClient
+    .storage
+    .from(bucket)
+    .list("", {
+      search: filepath,
+      limit: 100
+    });
+
+  if (error) throw error;
+
+  return (data ?? []).some(file => file.name === filepath);
+}
+
 export async function getSignedUrl(bucket: string, filepath: string): Promise<string> {
   const { data, error } = await supabaseClient
     .storage

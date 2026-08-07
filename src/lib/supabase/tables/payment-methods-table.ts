@@ -1,7 +1,7 @@
 import { PaymentMethodRow } from "@/types/models.types";
 import { supabaseClient } from "@/lib/supabase/supabase-client";
 import { ActualFileObject } from "filepond";
-import { deleteFromBucket, getPublicUrl, uploadToBucket } from "@/lib/supabase/supabase-storage";
+import { deleteFromBucket, existsInBucket, getPublicUrl, uploadToBucket } from "@/lib/supabase/supabase-storage";
 
 // Types
 type CreatePaymentMethodParameters = {
@@ -64,8 +64,10 @@ export async function updatePaymentMethod({ id, name, oldImage, newImage }: Upda
   try {
     let newQrCodeImageFilename: string | null = null;
 
-    if (oldImage && newImage) {
-      await deleteFromBucket("qr_codes", [oldImage]);
+    if (newImage) {
+      if (oldImage) {
+        await deleteFromBucket("qr_codes", [oldImage]);
+      }
       newQrCodeImageFilename = await uploadToBucket("qr_codes", newImage);
     }
 
@@ -103,6 +105,37 @@ export async function deletePaymentMethod(id: number): Promise<PaymentMethodRow 
       await deleteFromBucket("qr_codes", [data.qr_code_image]);
 
     return data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function deleteQrCode(id: number): Promise<PaymentMethodRow | null> {
+  try {
+    const { data: paymentMethod } = await supabaseClient
+      .from("payment_methods")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (!paymentMethod?.qr_code_image) return null;
+
+    const exists = await existsInBucket("qr_codes", paymentMethod.qr_code_image);
+    if (!exists) return null;
+
+    const { data } = await supabaseClient
+      .from("payment_methods")
+      .update({ qr_code_image: null })
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (!data) return null;
+
+    await deleteFromBucket("qr_codes", [paymentMethod.qr_code_image]);
+
+    const publicUrl = getPublicUrl("qr_codes", data.qr_code_image ?? "");
+    return { ...data, qr_code_image_url: publicUrl };
   } catch (error) {
     throw error;
   }
