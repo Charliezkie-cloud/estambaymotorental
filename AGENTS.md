@@ -35,89 +35,112 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Database Design
 ```dbml
+Table vehicle_colors {
+  id int8 [pk, increment, not null]
+  created_at timestamp [not null, default: `now()`]
+  
+  name text [not null] // e.g., Red, Black, Black Silver, White
+}
+
 Table vehicles {
-  id int8 [pk, unique, not null]
+  id int8 [pk, increment, not null]
+  created_at timestamp [not null, default: `now()`]
+  
+  color int8 [not null]
   model text [not null]
-  year_model int8 [not null]
-  daily_price numeric [not null]
-  half_day_price numeric [not null]
-  hourly_price numeric [not null]
+  year_model int4 [not null]
+  daily_price numeric(10, 2) [not null]
+  half_day_price numeric(10, 2) [not null]
+  hourly_price numeric(10, 2) [not null]
   image text [not null]
 
   /*
   Status:
-    Available = 1
-    Under Maintenance = 2
+    1 = Available
+    2 = Under Maintenance
+    3 = Inactive / Retired
   */
-  status int4 [not null, default: 1]
+  status int2 [not null, default: 1]
 }
 
-Table vehicle_colors {
-  id int8 [pk, unique, not null]
-  vehicle_id int8 [not null]
-  name text [not null]
+Table payment_methods {
+  id int8 [pk, increment, not null]
+  created_at timestamp [not null, default: `now()`]
+  
+  name text [not null] // e.g., GCash, Maya, Cash
+  qr_code_image text
 }
-Ref: vehicle_colors.vehicle_id > vehicles.id [delete: cascade, update: set null]
 
 Table bookings {
-  id int8 [pk, unique, not null]
+  id int8 [pk, increment, not null]
+  created_at timestamp [not null, default: `now()`]
+  
   vehicle_id int8 [not null]
-  
-  number_of_days_rent int8 [not null]
-  
+  payment_method_id int8 [not null]
+
+  // Rental Schedule
   rental_date date [not null]
-  time_of_rental timestamp [not null]
-  
+  time_of_rental time [not null]
   return_date date [not null]
-  time_of_return timestamp [not null]
-  
+  time_of_return time [not null]
+
+  // Guest Customer Details (No Login Required)
   full_name text [not null]
   phone_number text [not null]
   facebook_account text [not null]
-  payment_method_id int8 [not null]
-  payment_receipt_image text [not null]
   drivers_license_image text [not null]
   valid_id_image text [not null]
 
-  /*
-  Is delivery:
-    No = 0
-    Yes = 1
-  */
-  is_delivery int4 [not null, default: 0]
-  address_for_delivery text [not null]
-  delivery_fee numeric [not null]
-  pickup_fee numeric [not null]
+  // Payment Proof
+  payment_receipt_image text [not null]
 
-  amount numeric [not null]
+  // Delivery Details (Nullable if Store Pickup)
+  is_delivery boolean [not null, default: false]
+  address_for_delivery text [not null]
+  delivery_fee numeric(10, 2) [default: 0]
+  pickup_fee numeric(10, 2) [default: 0]
+
+  total_amount numeric(10, 2) [not null]
 
   /*
   Booking status:
-    Completed = 1
-    Change Unit = 2
-    Reserved = 3
-    Rescheduled = 4
-    Cancelled = 5
-    On Going = 6
+    1 = Reserved
+    2 = On Going
+    3 = Completed
+    4 = Rescheduled
+    5 = Change Unit
+    6 = Cancelled
   */
-  booking_status int4 [not null, default: 3]
+  booking_status int4 [not null, default: 1]
 
   /*
   Payment status:
-    Paid = 1
-    Partially Paid = 2
-    Pending = 3
+    1 = Pending
+    2 = Partially Paid
+    3 = Paid
   */
-  payment_status int4 [not null, default: 3]
+  payment_status int4 [not null, default: 1]
 }
-Ref: bookings.vehicle_id > vehicles.id [delete: set null, update: set null]
-Ref: bookings.payment_method_id > payment_methods.id [delete: set null, update: set null]
 
-Table payment_methods {
-  id integer [pk, unique, not null]
-  name text [not null]
-  qr_code_image text [default: null]
+Table reviews {
+  id int8 [pk, increment, not null]
+  created_at timestamp [not null, default: `now()`]
+
+  reviewer_name text [not null]
+  rating int2 [not null] // Rating scale (e.g., 1 to 5)
+  comment text
+
+  /*
+  Admin Moderation:
+    is_published: Admin can toggle this to show or hide the review on the website
+  */
+  is_published boolean [not null, default: false]
 }
+
+// Foreign Key References (Restricted Deletes)
+Ref: vehicles.color > vehicle_colors.id [delete: restrict, update: cascade]
+Ref: bookings.vehicle_id > vehicles.id [delete: restrict, update: cascade]
+Ref: bookings.payment_method_id > payment_methods.id [delete: restrict, update: cascade]
 ```
 
 # UI & Theming Rules
