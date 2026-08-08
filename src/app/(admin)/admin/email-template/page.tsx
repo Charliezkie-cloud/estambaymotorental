@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import AdminSidebar from "@/components/layouts/admin-sidebar";
 import { supabaseClient } from "@/lib/supabase/supabase-client";
 import AdminResponsiveSidebarTrigger from "@/components/layouts/admin-responsive-sidebar-trigger";
-import { AdminBookingNotificationPreview } from "@/components/layouts/admin-email-templates/admin-booking-notification-preview";
+import { AdminBookingNotificationPreview } from "@/components/layouts/email-template-previews/admin-booking-notification-preview";
 import { useAuth } from "@/hooks/useAuth";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 
