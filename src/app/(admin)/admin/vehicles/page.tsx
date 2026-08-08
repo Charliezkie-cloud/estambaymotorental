@@ -1,13 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { redirect } from "next/navigation";
+import { useState } from "react";
 import { registerPlugin } from "react-filepond";
 
-import AdminSidebar from "@/components/layouts/admin-sidebar";
-import { supabaseClient } from "@/lib/supabase/supabase-client";
-import { useAuth } from "@/hooks/useAuth";
+import { AdminSidebar } from "@/components/layouts/admin-sidebar";
 import AdminVehiclesTable from "@/components/layouts/vehicles-table/admin-vehicles-table";
 import AdminResponsiveSidebarTrigger from "@/components/layouts/admin-responsive-sidebar-trigger";
 import AdminColorsTable from "@/components/layouts/vehicle-colors-table/admin-colors-table";
@@ -30,26 +26,11 @@ registerPlugin(
 );
 
 export default function AdminVehiclePage() {
-  // Hooks
-  const { loading, user, error } = useAuth();
-
-  // States
   const [vehicleColors, setVehicleColors] = useState<VehicleColorRow[]>([]);
-
-  // Use effects
-  useEffect(() =>  {
-    if (error)
-      toast.error("Session Failed", {
-        description: error
-      });
-
-    if (!loading && !user)
-      return redirect("/admin/login");
-  }, [loading, user, error]);
 
   return (
     <>
-      <AdminSidebar supabaseClient={supabaseClient} />
+      <AdminSidebar />
 
       <main className="w-full">
         <AdminResponsiveSidebarTrigger />

@@ -1,11 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
-import AdminSidebar from "@/components/layouts/admin-sidebar";
-import { supabaseClient } from "@/lib/supabase/supabase-client";
-import { useEffect } from "react";
-import { toast } from "sonner";
-import { redirect } from "next/navigation";
+import { AdminSidebar } from "@/components/layouts/admin-sidebar";
 import AdminPaymentMethodsTable from "@/components/layouts/payment-methods-table/admin-payment-methods-table";
 
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
@@ -27,23 +22,9 @@ registerPlugin(
 );
 
 export default function AdminPaymentMethodsPage() {
-  // Hooks
-  const { loading, user, error } = useAuth();
-
-  // Use effects
-  useEffect(() => {
-    if (error)
-      toast.error("Session Failed", {
-        description: error
-      });
-
-    if (!loading && !user)
-      return redirect("/admin/login");
-  }, [loading, user, error]);
-
   return (
     <>
-      <AdminSidebar supabaseClient={supabaseClient} />
+      <AdminSidebar />
 
       <main className="w-full">
         <AdminResponsiveSidebarTrigger />

@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { logoutAdmin } from "@/lib/supabase/auth-actions";
 import Image from "next/image";
 import Logo from "@/public/favicon.jpg";
 
@@ -40,10 +40,6 @@ interface LinkItem {
   href: string;
   icon: React.ReactNode;
   tooltip: string;
-}
-
-interface Props {
-  supabaseClient: SupabaseClient;
 }
 
 const NAV_ITEMS: LinkItem[] = [
@@ -85,7 +81,7 @@ const NAV_ITEMS: LinkItem[] = [
   },
 ];
 
-export default function AdminSidebar({ supabaseClient }: Props) {
+export const AdminSidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const [logoutLoading, setLogoutLoading] = useState(false);
@@ -103,8 +99,7 @@ export default function AdminSidebar({ supabaseClient }: Props) {
   async function logoutUser() {
     setLogoutLoading(true);
     try {
-      await supabaseClient.auth.signOut();
-      router.push("/admin/login");
+      await logoutAdmin();
     } finally {
       setLogoutLoading(false);
     }
@@ -129,10 +124,6 @@ export default function AdminSidebar({ supabaseClient }: Props) {
             >
               {/* Logo mark */}
               <Image src={Logo} alt={"Estambay Moto Rentals Logo"} height={32} width={32} loading="lazy" className="rounded-full" />
-              {/*<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">*/}
-              {/*  <Bike className="h-4 w-4" />*/}
-              {/*</span>*/}
-
               {/* Brand name */}
               <div className="flex flex-col leading-none">
                 <span className="font-heading font-bold text-sm tracking-tight">
@@ -224,4 +215,4 @@ export default function AdminSidebar({ supabaseClient }: Props) {
       </SidebarFooter>
     </Sidebar>
   );
-}
+};

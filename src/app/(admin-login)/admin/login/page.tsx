@@ -1,4 +1,4 @@
-import AdminLoginForm from "@/components/layouts/admin-login-form";
+import { AdminLoginForm } from "@/components/layouts/admin-login-form";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Logo from "@/public/favicon.jpg";
 import Image from "next/image";

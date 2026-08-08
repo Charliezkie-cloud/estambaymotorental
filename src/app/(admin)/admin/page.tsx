@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { 
   LayoutDashboard, 
@@ -16,9 +15,7 @@ import {
   RefreshCw
 } from "lucide-react";
 
-import AdminSidebar from "@/components/layouts/admin-sidebar";
-import { supabaseClient } from "@/lib/supabase/supabase-client";
-import { useAuth } from "@/hooks/useAuth";
+import { AdminSidebar } from "@/components/layouts/admin-sidebar";
 import AdminResponsiveSidebarTrigger from "@/components/layouts/admin-responsive-sidebar-trigger";
 import AdminDashboardCharts from "@/components/layouts/admin-dashboard/admin-dashboard-charts";
 import AdminRecentBookingsTable from "@/components/layouts/admin-dashboard/admin-recent-bookings-table";
@@ -29,20 +26,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default function AdminDashboardPage() {
-  // Hooks
-  const { loading, user, error } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
-
-  // Use effects
-  useEffect(() => {
-    if (error)
-      toast.error("Session Failed", {
-        description: error
-      });
-
-    if (!loading && !user)
-      return redirect("/admin/login");
-  }, [loading, user, error]);
 
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
@@ -58,7 +42,7 @@ export default function AdminDashboardPage() {
 
   return (
     <>
-      <AdminSidebar supabaseClient={supabaseClient} />
+      <AdminSidebar />
 
       <main className="w-full min-h-screen bg-background pb-12">
         <AdminResponsiveSidebarTrigger />

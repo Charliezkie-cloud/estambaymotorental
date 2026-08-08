@@ -1,38 +1,31 @@
 "use client";
 
 import { EyeClosed, EyeIcon, Loader2, Lock, Mail } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { redirect } from "next/navigation";
+import React, { useState } from "react";
 import { toast } from "sonner";
 
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import { supabaseClient } from "@/lib/supabase/supabase-client";
+import { loginAdmin } from "@/lib/supabase/auth-actions";
 import { CardContent, CardFooter } from "@/components/ui/card";
 
-export default function AdminLoginForm() {
-  // Hooks
-  const { loading, user, error } = useAuth();
-
-  // States
+export const AdminLoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordShow, setPasswordShow] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // Handlers
   async function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoginLoading(true);
 
     try {
-      const { error: loginError } = await supabaseClient.auth.signInWithPassword({ email, password });
+      const result = await loginAdmin(email, password);
 
-      if (loginError) {
+      if (result.error) {
         toast.error("Login Failed", {
-          description: loginError.message,
+          description: result.error,
         });
       }
     } finally {
@@ -41,21 +34,8 @@ export default function AdminLoginForm() {
   }
 
   function togglePassword() {
-    setPasswordShow(prev => !prev);
+    setPasswordShow((prev) => !prev);
   }
-
-  // Use effects
-  useEffect(() => {
-    if (error) {
-      toast.error("Session Failed", {
-        description: error,
-      });
-    }
-
-    if (!loading && user) {
-      return redirect("/admin");
-    }
-  }, [loading, user, error]);
 
   return (
     <>
@@ -137,4 +117,4 @@ export default function AdminLoginForm() {
       </CardFooter>
     </>
   );
-}
+};

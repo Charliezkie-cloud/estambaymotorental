@@ -1,33 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { toast } from "sonner";
-import { redirect } from "next/navigation";
-
-import AdminSidebar from "@/components/layouts/admin-sidebar";
-import { supabaseClient } from "@/lib/supabase/supabase-client";
+import { AdminSidebar } from "@/components/layouts/admin-sidebar";
 import AdminResponsiveSidebarTrigger from "@/components/layouts/admin-responsive-sidebar-trigger";
 import { AdminBookingNotificationPreview } from "@/components/layouts/email-template-previews/admin-booking-notification-preview";
-import { useAuth } from "@/hooks/useAuth";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 
 export default function AdminEmailTemplatePage() {
-  // Hooks
-  const { loading, user, error } = useAuth();
-
-  // Use effects
-  useEffect(() => {
-    if (error)
-      toast.error("Session Failed", {
-        description: error,
-      });
-
-    if (!loading && !user) return redirect("/admin/login");
-  }, [loading, user, error]);
-
   return (
     <>
-      <AdminSidebar supabaseClient={supabaseClient} />
+      <AdminSidebar />
 
       <main className="w-full">
         <AdminResponsiveSidebarTrigger />
