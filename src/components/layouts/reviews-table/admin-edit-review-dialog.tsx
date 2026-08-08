@@ -77,6 +77,7 @@ export default function AdminEditReviewDialog({ row, onRowUpdate, onCancel }: Pr
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (row) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setReviewerName(row.reviewer_name);
       setRating(row.rating);
       setComment(row.comment);
