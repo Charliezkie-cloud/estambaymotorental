@@ -26,6 +26,7 @@ import { motion, AnimatePresence } from "motion/react";
 import Lightbox from "yet-another-react-lightbox";
 import { BookingRow, PaymentMethodRow, VehicleRow } from "@/types/models.types";
 import { getCurrentTimeString, getDaysBetween } from "@/lib/helpers/datetime-helpers";
+import type { AdminBookingNotificationPayload } from "@/lib/helpers/email-notification-helpers";
 import { createBooking, getAllBookings } from "@/lib/supabase/tables/bookings-table";
 import {
   checkBookingConflict,
@@ -204,7 +205,7 @@ export function CustomerBookingDialog({
       const dailyPrice = selectedVehicle?.daily_price ?? 0;
       const totalAmount = dailyPrice * daysCount;
 
-      await createBooking({
+      const booking = await createBooking({
         vehicle_id: vehicleId!,
         number_of_days_rent: daysCount,
         rental_date: rentalDate!.toDateString(),
@@ -226,6 +227,55 @@ export function CustomerBookingDialog({
         payment_status: 3, // Pending
         amount: totalAmount,
       });
+
+      if (booking) {
+        const paymentMethodName =
+          paymentMethods.find((pm) => pm.id === paymentMethodId)?.name ??
+          booking.payment_methods?.name ??
+          "";
+
+        const notificationPayload: AdminBookingNotificationPayload = {
+          id: booking.id,
+          created_at: booking.created_at,
+          full_name: booking.full_name,
+          phone_number: booking.phone_number,
+          facebook_account: booking.facebook_account,
+          vehicle_id: booking.vehicle_id,
+          number_of_days_rent: booking.number_of_days_rent,
+          rental_date: booking.rental_date,
+          time_of_rental: booking.time_of_rental,
+          return_date: booking.return_date,
+          time_of_return: booking.time_of_return,
+          is_delivery: booking.is_delivery,
+          address_for_delivery: booking.address_for_delivery,
+          delivery_fee: booking.delivery_fee,
+          pickup_fee: booking.pickup_fee,
+          payment_method_id: booking.payment_method_id,
+          payment_status: booking.payment_status,
+          booking_status: booking.booking_status,
+          amount: booking.amount,
+          vehicle_model: selectedVehicle?.model ?? booking.vehicles?.model ?? "",
+          vehicle_year_model: selectedVehicle?.year_model ?? 0,
+          payment_method_name: paymentMethodName,
+        };
+
+        try {
+          const notificationResponse = await fetch("/api/email-notification", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(notificationPayload),
+          });
+
+          if (!notificationResponse.ok) {
+            console.error(
+              "Failed to send admin booking notification:",
+              await notificationResponse.text(),
+            );
+          }
+        } catch (notifyError) {
+          console.error("Failed to send admin booking notification:", notifyError);
+        }
+      }
 
       toast.success("Booking request submitted successfully!", {
         description: "We will review your reservation shortly.",
