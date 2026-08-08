@@ -23,8 +23,8 @@ export type BookingRow = Database["public"]["Tables"]["bookings"]["Row"] & {
 export type PaymentMethodRow = Database["public"]["Tables"]["payment_methods"]["Row"] & {
   qr_code_image_url?: string;
 }
+export type ReviewsRow = Database["public"]["Tables"]["reviews"]["Row"];
 
 // Views
 export type MonthlyBookingsCountsViewItem = Database["public"]["Views"]["monthly_bookings_counts"]["Row"];
 export type VehicleIncomesViewItem = Database["public"]["Views"]["vehicles_income"]["Row"];
-  
