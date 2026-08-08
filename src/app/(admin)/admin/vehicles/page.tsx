@@ -37,7 +37,7 @@ export default function AdminVehiclePage() {
   const [vehicleColors, setVehicleColors] = useState<VehicleColorRow[]>([]);
 
   // Use effects
-  useEffect(() => {
+  useEffect(() =>  {
     if (error)
       toast.error("Session Failed", {
         description: error

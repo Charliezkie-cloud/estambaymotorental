@@ -6,6 +6,7 @@ import {
   Bike,
   BookOpen,
   CreditCard,
+  Mail,
   LogOut,
   Loader2,
   ChevronRight,
@@ -68,6 +69,12 @@ const NAV_ITEMS: LinkItem[] = [
     href: "/admin/payment-methods",
     icon: <CreditCard />,
     tooltip: "Manage payment options",
+  },
+  {
+    title: "Email Templates",
+    href: "/admin/email-template",
+    icon: <Mail />,
+    tooltip: "Preview notification emails",
   },
 ];
 
