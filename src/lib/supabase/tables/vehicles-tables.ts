@@ -137,3 +137,19 @@ export async function deleteVehicle(id: number): Promise<VehicleRow | null> {
     throw error;
   }
 }
+
+export async function updateVehicleStatus(id: number, status: number): Promise<VehicleRow | null> {
+  try {
+    const { data } = await supabaseClient
+      .from("vehicles")
+      .update({ status })
+      .eq("id", id)
+      .select("*, vehicle_colors(name)")
+      .single();
+
+    if (!data) return null;
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}

@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
+import { getAllVehicles, updateVehicleStatus } from "@/lib/supabase/tables/vehicles-tables";
 
 type StatusFilter = "all" | "available" | "maintenance";
 type SortField = "id" | "model" | "created_at";
@@ -134,6 +134,23 @@ export default function AdminVehiclesTable({ vehicleColors }: Props) {
     setVehicleRows((prev) =>
       prev.map((e) => (e.id === row.id ? row : e))
     );
+  }
+
+  async function updateRowStatus(id: number, status: number) {
+    try {
+      const data = await updateVehicleStatus(id, status);
+
+      if (!data) return;
+      setVehicleRows(prev =>
+        prev.map(e => e.id === data.id ? data : e)
+      );
+
+      toast.success("Vehicle Status Updated Successfully");
+    } catch (error) {
+      toast.error("Failed to Update Vehicle", {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   // Use effects
@@ -339,6 +356,12 @@ export default function AdminVehiclesTable({ vehicleColors }: Props) {
                             <DropdownMenuLabel>Row Actions</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => setDetailsRow(item)}>Details</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setUpdateRow(item)}>Edit</DropdownMenuItem>
+                          </DropdownMenuGroup>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel>Vehicle Status</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => updateRowStatus(item.id, 1)}>Available</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateRowStatus(item.id, 2)}>Maintenance</DropdownMenuItem>
                           </DropdownMenuGroup>
                           <DropdownMenuSeparator />
                           <DropdownMenuGroup>
