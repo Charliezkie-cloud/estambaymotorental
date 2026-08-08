@@ -130,7 +130,9 @@ Table payment_methods {
 - `@/src/components/` — Shared feature components and UI modules
 - `@/src/components/ui/` — Base `shadcn/ui` primitive components
 - `@/src/components/layouts/` — Reusable layout structures (Navbars, Sidebars, Footers)
+- `@/src/hooks/` — Custom React hooks for reusable logic, state, and side effects
 - `@/src/lib/` — Shared utilities, database queries, Supabase clients, and business logic
+- `@/src/test/` — Vitest test suites, test utilities, setup files, and mocks
 
 # Coding Standards & Best Practices
 - **Separation of Concerns:** Keep business and database logic isolated from UI components. Place all queries, mutations, and Supabase client calls inside `@/src/lib/`.

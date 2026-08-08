@@ -1,12 +1,14 @@
 import nodemailer from "nodemailer";
 
-const MAILER_EMAIL_ADDRESS = process.env.MAILER_EMAIL_ADDRESS ?? "";
-const MAILER_APP_PASSWORD = process.env.MAILER_APP_PASSWORD ?? "";
+import {
+  MAILER_APP_PASSWORD,
+  MAILER_EMAIL_ADDRESS,
+} from "@/lib/nodemailer/mailer-config";
 
 export const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: MAILER_EMAIL_ADDRESS,
-    pass: MAILER_APP_PASSWORD
-  }
+    pass: MAILER_APP_PASSWORD,
+  },
 });
