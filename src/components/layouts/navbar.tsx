@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, MapPin, Phone } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { businessInformation } from "@/lib/data/business-informations";
 
 export default function Navbar() {
   const [offcanvas, setOffcanvas] = useState(false);
@@ -111,11 +112,11 @@ export default function Navbar() {
               <div className="space-y-2 text-xs text-[#94A3B8]">
                 <div className="flex items-center gap-2">
                   <MapPin className="size-4 text-primary shrink-0" />
-                  <span>Cebu City, Philippines</span>
+                  <span>{businessInformation.locationLabel}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="size-4 text-primary shrink-0" />
-                  <span>0910 957 2971</span>
+                  <span>{businessInformation.phone}</span>
                 </div>
               </div>
 

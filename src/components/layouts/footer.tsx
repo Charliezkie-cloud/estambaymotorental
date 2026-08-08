@@ -8,6 +8,7 @@ import { FaTiktok } from "react-icons/fa";
 import { FaFacebook } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { businessInformation } from "@/lib/data/business-informations";
 
 type ContactItem = {
   icon: ReactNode;
@@ -17,12 +18,13 @@ type ContactItem = {
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const { name, address, city, phone, phoneTel, email, businessHours, social } = businessInformation;
 
-  const socialLinks = [
-    { icon: <FaFacebook className="size-5" />, label: "Facebook", href: "https://www.facebook.com/Estambaymotorentals" },
-    { icon: <FaTiktok className="size-5" />, label: "TikTok", href: "https://www.tiktok.com/@estambay02" },
-    { icon: <Mail className="size-5" />, label: "aj.dano.32@gmail.com", href: "mailto:aj.dano.32@gmail.com" },
-    { icon: <Phone className="size-5" />, label: "0910 957 2971", href: "tel:09109572971" },
+  const socialLinks: ContactItem[] = [
+    { icon: <FaFacebook className="size-5" />, label: "Facebook", href: social.facebook },
+    { icon: <FaTiktok className="size-5" />, label: "TikTok", href: social.tiktok },
+    { icon: <Mail className="size-5" />, label: email, href: `mailto:${email}` },
+    { icon: <Phone className="size-5" />, label: phone, href: `tel:${phoneTel}` },
   ];
 
   function openToNewTab(url: string) {
@@ -39,11 +41,11 @@ export default function Footer() {
               Estambay <span className="text-primary">Moto Rentals</span>
             </Link>
             <p className="text-sm max-w-sm leading-relaxed text-[#94A3B8]">
-              Your trusted 24/7 motorcycle and vehicle rental service in Cebu City. Skip the hassle and explore the city on your own terms.
+              Your trusted {businessHours.shortLabel} motorcycle and vehicle rental service in {city}. Skip the hassle and explore the city on your own terms.
             </p>
             <div className="flex items-start gap-2.5 text-sm pt-2">
               <MapPin className="size-4 text-primary shrink-0 mt-1" />
-              <span>416 Candido Padilla Street, Cebu City, Philippines, 6000</span>
+              <span>{address}</span>
             </div>
           </div>
 
@@ -60,7 +62,7 @@ export default function Footer() {
                         variant="outline"
                         size="icon"
                         className="rounded-full border-[#A88C6F]/30 bg-[#051424]/40 hover:bg-primary/20 hover:border-primary/50 text-white transition-all"
-                        onClick={() => openToNewTab(item.href)}
+                        onClick={() => item.href && openToNewTab(item.href)}
                       >
                         {item.icon}
                       </Button>
@@ -75,8 +77,8 @@ export default function Footer() {
 
         {/* Bottom Bar / Copyright */}
         <div className="mt-12 pt-6 border-t border-[#A88C6F]/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-          <p>© {currentYear} Estambay Moto Rentals. All rights reserved.</p>
-          <p className="text-[#94A3B8]/70">Reliable & Affordable Ride Rentals in Cebu</p>
+          <p>© {currentYear} {name}. All rights reserved.</p>
+          <p className="text-[#94A3B8]/70">Reliable & Affordable Ride Rentals in {city}</p>
         </div>
       </div>
     </footer>
