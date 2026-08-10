@@ -101,7 +101,7 @@ export default function HomePage() {
     async function fetchVehicles() {
       try {
         setIsLoadingVehicles(true);
-        const data = await getAllVehicles();
+        const data = await getAllVehicles(undefined, 1);
         setVehicles(data ?? []);
       } catch (error) {
         toast.error("Failed to Fetch Vehicles", {

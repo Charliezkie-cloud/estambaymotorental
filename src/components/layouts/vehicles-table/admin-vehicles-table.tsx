@@ -347,6 +347,7 @@ export default function AdminVehiclesTable({ vehicleColors }: Props) {
                     <TableCell>
                       {item.status === 1 && <Badge>Available</Badge>}
                       {item.status === 2 && <Badge variant="destructive">Under Maintenance</Badge>}
+                      {item.status === 3 && <Badge variant="outline">Retired</Badge>}
                     </TableCell>
                     <TableCell className="text-end">
                       <DropdownMenu>
@@ -362,6 +363,7 @@ export default function AdminVehiclesTable({ vehicleColors }: Props) {
                             <DropdownMenuLabel>Vehicle Status</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => updateRowStatus(item.id, 1)}>Available</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => updateRowStatus(item.id, 2)}>Maintenance</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateRowStatus(item.id, 3)}>Retired</DropdownMenuItem>
                           </DropdownMenuGroup>
                           <DropdownMenuSeparator />
                           <DropdownMenuGroup>

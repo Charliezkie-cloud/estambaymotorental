@@ -14,7 +14,7 @@ interface VehiclesSectionProps {
   onBookVehicle: (vehicleId: number) => void;
 }
 
-type VehicleFilter = "all" | "available" | "maintenance";
+type VehicleFilter = "all" | "available" | "maintenance" | "retired";
 
 export const VehiclesSection = ({
   vehicles,
@@ -26,6 +26,7 @@ export const VehiclesSection = ({
   const filteredVehicles = vehicles.filter((v) => {
     if (selectedFilter === "available") return v.status === 1;
     if (selectedFilter === "maintenance") return v.status === 2;
+    if (selectedFilter === "retired") return v.status === 3;
     return true;
   });
 
@@ -61,6 +62,14 @@ export const VehiclesSection = ({
               onClick={() => setSelectedFilter("maintenance")}
             >
               Maintenance ({vehicles.filter((v) => v.status === 2).length})
+            </Button>
+            <Button
+              size="sm"
+              variant={selectedFilter === "retired" ? "default" : "outline"}
+              className={selectedFilter !== "retired" ? "border-[#A88C6F]/30 text-[#94A3B8] hover:text-white" : ""}
+              onClick={() => setSelectedFilter("retired")}
+            >
+              Retired ({vehicles.filter((v) => v.status === 3).length})
             </Button>
           </div>
         </div>
@@ -111,13 +120,15 @@ export const VehiclesSection = ({
 
                     <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
                       <Badge
-                        className={`font-semibold px-2.5 py-1 text-xs border ${
-                          isAvailable
-                            ? "bg-[#3B5E43]/90 text-[#A9D0AE] border-[#3B5E43]"
-                            : "bg-amber-950/90 text-amber-300 border-amber-800"
-                        }`}
+                        className={`font-semibold px-2.5 py-1 text-xs border
+                          ${e.status === 1 && "bg-[#3B5E43]/90 text-[#A9D0AE] border-[#3B5E43]"}
+                          ${e.status === 2 && "bg-amber-950/90 text-amber-300 border-amber-800"}
+                          ${e.status === 3 && "bg-slate-950/90 text-slate-400 border-slate-700"}
+                         `}
                       >
-                        {isAvailable ? "Available" : "Maintenance"}
+                        {e.status === 1 && "Available"}
+                        {e.status === 2 && "Maintenance"}
+                        {e.status === 3 && "Retired"}
                       </Badge>
 
                       {e.year_model && (

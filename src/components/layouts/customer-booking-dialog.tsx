@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -292,6 +292,11 @@ export function CustomerBookingDialog({
 
   const selectedPaymentMethod = paymentMethods.find((pm) => pm.id === paymentMethodId);
 
+  const availableVehicles = useMemo(
+    () => vehicles.filter((v) => v.status === 1),
+    [vehicles],
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-6 overflow-hidden">
@@ -329,7 +334,7 @@ export function CustomerBookingDialog({
                 <Select
                   value={vehicleId}
                   onValueChange={(val) => setVehicleId(val)}
-                  items={vehicles.map((v) => ({
+                  items={availableVehicles.map((v) => ({
                     value: v.id,
                     label: `${v.model} (${v.vehicle_colors?.name ?? "Standard"}) - ₱${v.daily_price}/day`,
                   }))}
@@ -339,7 +344,7 @@ export function CustomerBookingDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      {vehicles.map((v) => (
+                      {availableVehicles.map((v) => (
                         <SelectItem key={`booking-v-${v.id}`} value={v.id}>
                           {v.model} ({v.vehicle_colors?.name ?? "Standard"}) - ₱{v.daily_price}/day
                         </SelectItem>
