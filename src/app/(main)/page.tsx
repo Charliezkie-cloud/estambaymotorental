@@ -24,10 +24,12 @@ import { Button } from "@/components/ui/button";
 import { CustomerBookingDialog } from "@/components/layouts/customer-booking-dialog";
 import { VehiclesSection } from "@/components/layouts/homepage/vehicles-section";
 import { LocationSection } from "@/components/layouts/homepage/location-section";
+import { ReviewsSection } from "@/components/layouts/homepage/reviews-section";
 import { businessInformation } from "@/lib/data/business-informations";
 import { getAllPaymentMethods } from "@/lib/supabase/tables/payment-methods-table";
+import { getPublishedReviews } from "@/lib/supabase/tables/reviews-table";
 import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
-import { PaymentMethodRow, VehicleRow } from "@/types/models.types";
+import { PaymentMethodRow, ReviewsRow, VehicleRow } from "@/types/models.types";
 
 // ─── Hero Slides ───────────────────────────────────────────────────────────
 // To add more slides, push additional entries to this array.
@@ -51,6 +53,8 @@ export default function HomePage() {
   // ── Vehicle & booking states ──────────────────────────────────────────────
   const [vehicles, setVehicles] = useState<VehicleRow[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState<boolean>(true);
+  const [reviews, setReviews] = useState<ReviewsRow[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodRow[]>([]);
   const [isBookingOpen, setIsBookingOpen] = useState<boolean>(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
@@ -101,7 +105,7 @@ export default function HomePage() {
     async function fetchVehicles() {
       try {
         setIsLoadingVehicles(true);
-        const data = await getAllVehicles(undefined, 1);
+        const data = await getAllVehicles();
         setVehicles(data ?? []);
       } catch (error) {
         toast.error("Failed to Fetch Vehicles", {
@@ -130,6 +134,26 @@ export default function HomePage() {
     }
 
     fetchPaymentMethods();
+  }, []);
+
+  useEffect(() => {
+    if (reviews.length > 0) return;
+
+    async function fetchReviews() {
+      try {
+        setIsLoadingReviews(true);
+        const data = await getPublishedReviews();
+        setReviews(data ?? []);
+      } catch (error) {
+        toast.error("Failed to Fetch Reviews", {
+          description: error instanceof Error ? error.message : String(error)
+        });
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    }
+
+    fetchReviews();
   }, []);
 
   const { name, city, businessHours } = businessInformation;
@@ -229,7 +253,9 @@ export default function HomePage() {
 
       <LocationSection onBookRide={() => handleOpenBooking()} />
 
-      <section className="bg-[#010F1F] py-16 mt-12">
+      <ReviewsSection reviews={reviews} isLoadingReviews={isLoadingReviews} />
+
+      <section className="py-16 mt-12">
         <div className="max-w-4xl mx-4 sm:mx-6 md:mx-8 lg:mx-auto text-center space-y-6">
           <Badge className="uppercase font-heading bg-[#3B5E43]/20 text-[#A9D0AE] px-4 py-2" variant="secondary">
             <span className="tracking-widest">Ready to Explore?</span>

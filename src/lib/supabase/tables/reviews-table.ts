@@ -27,6 +27,18 @@ export async function getAllReviews(): Promise<ReviewsRow[] | null> {
   return data;
 }
 
+export async function getPublishedReviews(): Promise<ReviewsRow[] | null> {
+  const { data, error } = await supabaseClient
+    .from("reviews")
+    .select("*")
+    .eq("is_published", 1)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return data;
+}
+
 export async function createReview({
   reviewerName,
   rating,
