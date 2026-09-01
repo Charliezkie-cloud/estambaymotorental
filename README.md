@@ -1,5 +1,5 @@
 # Estambay Moto Rental
-A moto rentals website with full admin management system for bookings, vehicles, and more.
+An all-in-one web app for motorcycle rentals that gives admins total control over bookings, vehicle management, and daily operations.
 
 # [Live Website](https://estambaymotorental.vercel.app/)
 
