@@ -1,5 +1,6 @@
 "use client";
 
+import { FaTiktok } from "react-icons/fa";
 import { Clock, Dot, Mail, MapPin, Phone } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +12,9 @@ interface LocationSectionProps {
 }
 
 export const LocationSection = ({ onBookRide }: LocationSectionProps) => {
-  const { name, city, address, phone, email, businessHours, maps } = businessInformation;
+  const { name, city, address, phone, email, businessHours, maps, social } = businessInformation;
+  const tiktok = social.tiktok;
+  const tiktokPageTag = new URL(tiktok).pathname.slice(1);
 
   return (
     <section id="location" className="max-w-7xl mx-4 sm:mx-6 md:mx-8 lg:mx-10 xl:mx-auto py-12 scroll-mt-20">
@@ -70,6 +73,16 @@ export const LocationSection = ({ onBookRide }: LocationSectionProps) => {
                     <p className="font-semibold text-white">Email</p>
                     <a href={`mailto:${email}`} className="hover:text-primary transition-colors">
                       {email}
+                    </a>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FaTiktok className="size-5 text-primary shrink-0 mt-1" />
+                  <div>
+                    <p className="font-semibold text-white">Tiktok</p>
+                    <a href={tiktok} className="hover:text-primary transition-colors">
+                      {tiktokPageTag}
                     </a>
                   </div>
                 </div>

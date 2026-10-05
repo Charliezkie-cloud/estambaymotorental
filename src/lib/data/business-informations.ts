@@ -49,7 +49,7 @@ export const businessInformation: BusinessInformation = {
   locationLabel: "Cebu City, Philippines",
   phone: "0910 957 2971",
   phoneTel: "09109572971",
-  email: "aj.dano.32@gmail.com",
+  email: "estambayvehiclerental02@gmail.com",
   businessHours: {
     label: "24 Hours a day / 7 Days a week",
     shortLabel: "24/7 Service",
@@ -63,6 +63,6 @@ export const businessInformation: BusinessInformation = {
   },
   social: {
     facebook: "https://www.facebook.com/Estambaymotorentals",
-    tiktok: "https://www.tiktok.com/@estambay02",
+    tiktok: "https://www.tiktok.com/@estambay02", // Must only have one "@PAGENAME" e.g. "@ch4rlzki"
   },
 };

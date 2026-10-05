@@ -30,6 +30,7 @@ import { getAllPaymentMethods } from "@/lib/supabase/tables/payment-methods-tabl
 import { getPublishedReviews } from "@/lib/supabase/tables/reviews-table";
 import { getAllVehicles } from "@/lib/supabase/tables/vehicles-tables";
 import { PaymentMethodRow, ReviewsRow, VehicleRow } from "@/types/models.types";
+import Link from "next/link";
 
 // ─── Hero Slides ───────────────────────────────────────────────────────────
 // To add more slides, push additional entries to this array.
@@ -177,7 +178,9 @@ export default function HomePage() {
               </h1>
               <p className="text-[#94A3B8]">Skip the last-minute headache of finding a ride. Reserve your vehicle ahead of time with {name} and just focus on the trip.
               </p>
-              <Button className="px-6" onClick={() => handleOpenBooking()}>Book a Motorcycle Now</Button>
+              <Link href="#vehicles">
+                <Button className="px-6 uppercase tracking-wider">Book with us</Button>
+              </Link>
             </div>
           </div>
 

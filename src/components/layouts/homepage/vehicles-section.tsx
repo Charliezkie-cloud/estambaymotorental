@@ -151,23 +151,11 @@ export const VehiclesSection = ({
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 py-3 px-3 rounded-lg bg-[#010F1F]/60 border border-[#A88C6F]/15">
-                      <div className="text-center">
-                        <span className="block text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">Daily</span>
-                        <span className="text-xs sm:text-sm font-semibold text-white">
+                    <div className="grid grid-cols-1 gap-2 py-3 px-3 rounded-lg bg-[#010F1F]/60 border border-[#A88C6F]/15">
+                      <div className="text-center space-y-2">
+                        <span className="block text-[12px] font-bold uppercase tracking-wider text-[#94A3B8]">Daily</span>
+                        <span className="sm:text-lg font-semibold text-white">
                           {e.daily_price.toLocaleString("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 })}
-                        </span>
-                      </div>
-                      <div className="text-center border-x border-[#A88C6F]/15 px-1">
-                        <span className="block text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">Half Day</span>
-                        <span className="text-xs sm:text-sm font-semibold text-white">
-                          {e.half_day_price.toLocaleString("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 })}
-                        </span>
-                      </div>
-                      <div className="text-center">
-                        <span className="block text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">Hourly</span>
-                        <span className="text-xs sm:text-sm font-semibold text-white">
-                          {e.hourly_price.toLocaleString("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 })}
                         </span>
                       </div>
                     </div>
